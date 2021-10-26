@@ -53,15 +53,18 @@ def timerFired(data):
 
             # Get Action fro epsilon greedy policy
             action = data.agent.agentMove(data.state)
+            print(action)
 
             # Check for outcome - right now it's just win condition
-            update = data.state.checkBoard(data, action) 
+            update = data.state.checkBoard(data, action)
+            print(update)
 
             # Move Agent
             data.agent.movePlayer(data, data.state, action)
 
             # Update q values
             data.agent.qValueUpdate(update)
+            print(data.agent)
 
             # Check for game over condition 
             data.isGameOver = data.state.isGameOver(data)
@@ -149,4 +152,4 @@ def run(width=800, height=900):
     root.mainloop()  # blocks until window is closed
     print("bye!")
 
-run(600, 600)
+run(400, 400)
