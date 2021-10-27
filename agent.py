@@ -90,6 +90,9 @@ class Agent(object):
             reward = 10
         elif update == "box off": 
             reward = -10
+        ## Adding rewards for just move a box
+        elif update == "move box":
+            reward = 5
         else:
             reward = -1
         # Update q values for the state

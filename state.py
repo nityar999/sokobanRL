@@ -33,14 +33,21 @@ class State(object):
         print("# storages: %s - Location of storages:%s" % (self.numStorage, self.storage))
 
         e_newPosition = (data.agent.row + action[0], data.agent.col + action[1])
-        e_boxPosition = (e_newPosition[0] + action[0], e_newPosition[1] + action[1])
-        print("Expected new position of the box: (%s, %s)" % (e_boxPosition[0], e_boxPosition[1]))
+        ## Check if there is a box in the position the agent want to move
+        if e_newPosition in self.boxes:
+            print('There is a BOX that the agent tries to move')
+            ## Expected new position for the box
+            e_boxPosition = (e_newPosition[0] + action[0], e_newPosition[1] + action[1])
+            print("Expected new position of the box: (%s, %s)" % (e_boxPosition[0], e_boxPosition[1]))
 
-        if e_boxPosition in self.storage:
-            ## Check if it is a valid position for storage
-            if e_boxPosition not in self.boxes:
-                return "box on"
-            ## If it is already in the boxes array, the location should be used by another box.
+            if e_boxPosition in self.storage:
+                ## Check if it is a valid position for storage
+                if e_boxPosition not in self.boxes:
+                    return "box on"
+                ## If it is already in the boxes array, the location should be used by another box.
+            else:
+                ## The next position is not a valid storage then the agent just move the box
+                return "move box"
 
         if self.isGameOver(data):
             return "win"
