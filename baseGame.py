@@ -53,11 +53,11 @@ def timerFired(data):
 
             # Get Action fro epsilon greedy policy
             action = data.agent.agentMove(data.state)
-            print(action)
+            print("ACTION: (%s, %s)" % (action[0], action[1]))
 
             # Check for outcome - right now it's just win condition
             update = data.state.checkBoard(data, action)
-            print(update)
+            print("EXPECTED OUTCOME: %s" % (update))
 
             # Move Agent
             data.agent.movePlayer(data, data.state, action)
