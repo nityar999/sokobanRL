@@ -1,4 +1,5 @@
 import random 
+import json
 
 def isInBounds(data, row, col):
     if row > 0 and row < data.state.rows - 1 and col > 0 and col < data.state.cols - 1:
@@ -7,15 +8,15 @@ def isInBounds(data, row, col):
 
 class Agent(object):
 
-    def __init__(self, row, col, state):
+    def __init__(self, row, col, state, epsilon=0.1, gamma=0.9, learning=0.5):
         self.row = row 
         self.col = col
         self.state = state
 
-        # what should these values be 
-        self.epsilon = 0.1      # fraction of the time agents acts randomly
-        self.gamma = 0.9        # discount factor
-        self.learning = 0.5     # also known as alpha
+        # What should these values be 
+        self.epsilon = epsilon     # Fraction of the time agents acts randomly
+        self.gamma = gamma         # Discount factor
+        self.learning = learning   # Also known as alpha
 
         # Basic actions: LEFT, RIGHT, UP, DOWN
         self.actions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
@@ -25,7 +26,19 @@ class Agent(object):
 
         # Maps state to q value for each action, initialize to 0
         # {state: [0, 0, 0, 0]}
-        self.q = {}
+        self.q = self.readQValues()
+
+    # Read saved Q values, so agent remembers what it's learned previously
+    def readQValues(self, path="qvalues.json"):
+        with open(path, "rt") as f:
+            contents = json.load(f)
+            # contents = f.read()
+        return contents
+
+    def writeQValues(self, contents, path="qvalues.json"):
+        with open(path, "wt") as f:
+            json.dump(contents, f)
+            # f.write(contents)
 
     # Move according to the epsilon-greedy policy
     def agentMove(self, state):
