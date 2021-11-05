@@ -3,10 +3,11 @@ from agent import *
 from tkinter import *
 
 def init(data):
-    data.state = State("sokoban02.txt")
+    data.state = State("sokoban01.txt")
     data.board = data.state.board
     data.agent = Agent(data.state.playerRow, data.state.playerCol, data.state)
     print(data.agent)
+
 
     data.boxWidth = data.width / data.state.cols
     data.boxHeight = data.height / data.state.rows
@@ -62,6 +63,7 @@ def timerFired(data):
 
             # Move Agent
             data.agent.movePlayer(data, data.state, action)
+
 
             # Update q values
             data.agent.qValueUpdate(update)
