@@ -2,11 +2,13 @@ from state import *
 from agent import *
 from tkinter import *
 
+import time
+
 def init(data):
     data.state = State("sokoban01.txt")
     data.board = data.state.board
     data.agent = Agent(data.state.playerRow, data.state.playerCol, data.state)
-    print(data.agent)
+    #print(data.agent)
 
 
     data.boxWidth = data.width / data.state.cols
@@ -60,7 +62,8 @@ def timerFired(data):
             # Check for outcome - right now it's just win condition
             update = data.state.checkBoard(data, action)
             print("EXPECTED OUTCOME: %s" % (update))
-
+            # Wait for 2 seconds
+            time.sleep(5)
             # Move Agent
             data.agent.movePlayer(data, data.state, action)
 
