@@ -32,13 +32,11 @@ class Agent(object):
     def readQValues(self, path="qvalues.json"):
         with open(path, "rt") as f:
             contents = json.load(f)
-            # contents = f.read()
         return contents
 
     def writeQValues(self, contents, path="qvalues.json"):
         with open(path, "wt") as f:
             json.dump(contents, f)
-            # f.write(contents)
 
     # Move according to the epsilon-greedy policy
     def agentMove(self, state):
@@ -71,20 +69,20 @@ class Agent(object):
             # if box is next to another box, do nothing
             if boxPosition in data.state.boxes:
                 return
-            # Move box and player if both and in bounds
+            # Move box and player if both are in bounds
             if isInBounds(data, boxPosition[0], boxPosition[1]) and data.board[boxPosition[0]][boxPosition[1]] in [0, '.']:
                 data.state.boxes.remove(newPosition)
                 data.state.boxes.append(boxPosition)
                 (self.row, self.col) = newPosition
                 data.state.playerRow, data.state.playerCol = newPosition
-                data.state.createBoard()
+                data.board = data.state.createBoard()
                 self.state = data.state
             
         # No adjacent box, move player only
         elif isInBounds(data, newPosition[0], newPosition[1]) and data.board[newPosition[0]][newPosition[1]] in [0, '.']:
             (self.row, self.col) = newPosition
             data.state.playerRow, data.state.playerCol = newPosition
-            data.state.createBoard()
+            data.board = data.state.createBoard()
             self.state = data.state
 
     def qValueUpdate(self, update):
@@ -102,7 +100,12 @@ class Agent(object):
             reward = -10
         else:
             reward = -1
+
         # Update q values for the state 
+        if s0 not in self.q:
+            self.q[s0] = [0, 0, 0, 0]
+        if s1 not in self.q:
+            self.q[s1] = [0, 0, 0, 0]
         currQValue = self.q[s0][self.actions.index(a0)]
         self.q[s0][self.actions.index(a0)] += self.learning*(reward + self.gamma*(max(self.q[s1])) - currQValue) 
 

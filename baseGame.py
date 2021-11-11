@@ -48,22 +48,22 @@ def timerFired(data):
     if not data.isGameOver:
 
         # Move happens every second
-        if data.time % 10 == 0:
+        if data.time % 1 == 0:
 
-            # Get Action fro epsilon greedy policy
-            action = data.agent.agentMove(data.state)
+            # Get Action from epsilon greedy policy
+            action = data.agent.agentMove(data.board)
 
             # Check for outcome - right now it's just win condition
             update = data.state.checkBoard(data, action) 
 
             # Move Agent
-            data.agent.movePlayer(data, data.state, action)
+            data.agent.movePlayer(data, data.board, action)
 
             # Update q values
             data.agent.qValueUpdate(update)
 
             # Check for game over condition 
-            data.isGameOver = data.state.isGameOver(data)
+            data.isGameOver = data.state.isGameOver(data, update)
     else:
         data.root.destroy()
 
@@ -73,7 +73,7 @@ def timerFired(data):
 
 # Draw game over screen
 def drawGameOver(canvas, data):
-    canvas.create_text(data.width / 2, data.height / 2, text = "You Win!")
+    canvas.create_text(data.width / 2, data.height / 2, text = "Game Over!")
 
 # Draw boxes and storage locations
 def drawBoard(canvas, data):
@@ -97,11 +97,21 @@ def drawBoxes(canvas, data):
         canvas.create_rectangle(data.boxWidth * col, data.boxHeight * row, 
                     data.boxWidth * (col + 1), data.boxHeight * (row + 1), fill = "brown")
 
+# Highlight safe squares (not simple deadlocks)
+def drawSafeLocations(canvas, data):
+    for (row, col) in data.state.deadlockedSquares:
+        canvas.create_rectangle(data.boxWidth * col, data.boxHeight * row, 
+                    data.boxWidth * (col + 1), data.boxHeight * (row + 1), fill = "light blue")
+    for (row, col) in data.state.corners:
+        canvas.create_rectangle(data.boxWidth * col, data.boxHeight * row, 
+                    data.boxWidth * (col + 1), data.boxHeight * (row + 1), fill = "blue")
+
 def redrawAll(canvas, data):
     if data.isGameOver:
         drawGameOver(canvas, data)
         return
 
+    drawSafeLocations(canvas, data)
     drawBoard(canvas, data)
     drawPlayer(canvas, data)
     drawBoxes(canvas, data)
@@ -110,7 +120,7 @@ def redrawAll(canvas, data):
 # Run Game
 ####################################
 
-def runGame(state, agent, width=800, height=900):
+def runGame(state, agent, width=800, height=800):
     def redrawAllWrapper(canvas, data):
         canvas.delete(ALL)
         redrawAll(canvas, data)
