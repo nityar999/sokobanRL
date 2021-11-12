@@ -56,11 +56,23 @@ def timerFired(data):
             # Check for outcome 
             update = data.state.checkBoard(data, action) 
 
+            # Get Action fro epsilon greedy policy
+            action = data.agent.agentMove(data.state)
+            print("ACTION: (%s, %s)" % (action[0], action[1]))
+
+            # Check for outcome - right now it's just win condition
+            update = data.state.checkBoard(data, action)
+            print("EXPECTED OUTCOME: %s" % (update))
+            # Wait for 2 seconds
+            time.sleep(5)
+
             # Move Agent
             data.agent.movePlayer(data, data.board, action)
 
+
             # Update q values
             data.agent.qValueUpdate(update)
+            print(data.agent)
 
             if update == "win":
                 print("WIN")
