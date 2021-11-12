@@ -40,6 +40,9 @@ class Agent(object):
             json.dump(contents, f)
             # f.write(contents)
 
+    def __repr__(self):
+        return "<Agent row:%s col:%s q:%s>" % (self.row, self.col, self.q)
+
     # Move according to the epsilon-greedy policy
     def agentMove(self, state):
 
@@ -100,9 +103,12 @@ class Agent(object):
             reward = 10
         elif update == "box off": 
             reward = -10
+        ## Adding rewards for just move a box
+        elif update == "move box":
+            reward = 5
         else:
             reward = -1
-        # Update q values for the state 
+        # Update q values for the state
         currQValue = self.q[s0][self.actions.index(a0)]
         self.q[s0][self.actions.index(a0)] += self.learning*(reward + self.gamma*(max(self.q[s1])) - currQValue) 
 
