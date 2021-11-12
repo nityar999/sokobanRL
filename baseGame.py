@@ -53,7 +53,7 @@ def timerFired(data):
             # Get Action from epsilon greedy policy
             action = data.agent.agentMove(data.board)
 
-            # Check for outcome - right now it's just win condition
+            # Check for outcome 
             update = data.state.checkBoard(data, action) 
 
             # Move Agent
@@ -99,12 +99,9 @@ def drawBoxes(canvas, data):
 
 # Highlight safe squares (not simple deadlocks)
 def drawSafeLocations(canvas, data):
-    for (row, col) in data.state.deadlockedSquares:
+    for (row, col) in data.state.safeSquares:
         canvas.create_rectangle(data.boxWidth * col, data.boxHeight * row, 
                     data.boxWidth * (col + 1), data.boxHeight * (row + 1), fill = "light blue")
-    for (row, col) in data.state.corners:
-        canvas.create_rectangle(data.boxWidth * col, data.boxHeight * row, 
-                    data.boxWidth * (col + 1), data.boxHeight * (row + 1), fill = "blue")
 
 def redrawAll(canvas, data):
     if data.isGameOver:

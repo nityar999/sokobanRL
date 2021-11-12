@@ -4,7 +4,7 @@ from baseGame import *
 from state import *
 from agent import *
 
-total = 20
+total = 25
 
 # Initialize Q Values
 with open("qvalues.json", "wt") as f:
