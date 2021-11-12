@@ -62,6 +62,9 @@ def timerFired(data):
             # Update q values
             data.agent.qValueUpdate(update)
 
+            if update == "win":
+                print("WIN")
+
             # Check for game over condition 
             data.isGameOver = data.state.isGameOver(data, update)
     else:

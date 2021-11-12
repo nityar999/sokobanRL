@@ -59,17 +59,28 @@ class State(object):
 
     
     def checkBoard(self, data, action):
+
+        # Check for timeout after 3 minutes
+        if data.time >= 1800:
+            return "timeout"
+
+        # Check for simple deadlocks
         for box in self.boxes:
             if box not in self.safeSquares:
                 return "deadlock"
+
+        # Check for win condition
         for box in self.boxes:
             if box not in self.storage:
                 return "none"
+
         return "win"
 
     def isGameOver(self, data, update):
         if update == "deadlock":
             return True  
+        if update == "timeout":
+            return True
         if update == "deadlock":
             return True  
         if update == "none":

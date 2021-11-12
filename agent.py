@@ -92,6 +92,8 @@ class Agent(object):
         # Compute rewards for the action
         if update == "deadlock": 
             reward = - 100
+        elif update == "timeout":
+            reward = -100
         elif update == "win":
             reward = 100
         elif update == "box on":
