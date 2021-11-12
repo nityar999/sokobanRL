@@ -2,20 +2,15 @@ from state import *
 from agent import *
 from tkinter import *
 
-import time
-
-def init(data):
-    data.state = State("sokoban01.txt")
+def init(data, state, agent):
+    data.state = state 
     data.board = data.state.board
-    data.agent = Agent(data.state.playerRow, data.state.playerCol, data.state)
-    #print(data.agent)
-
+    data.agent = agent
 
     data.boxWidth = data.width / data.state.cols
     data.boxHeight = data.height / data.state.rows
 
     data.time = 0
-
     data.isGameOver = False
 
 # Handles input from mouse 
@@ -74,6 +69,8 @@ def timerFired(data):
 
             # Check for game over condition 
             data.isGameOver = data.state.isGameOver(data)
+    else:
+        data.root.destroy()
 
 ####################################
 # Draw Functions
@@ -118,7 +115,7 @@ def redrawAll(canvas, data):
 # Run Game
 ####################################
 
-def run(width=800, height=900):
+def runGame(state, agent, width=800, height=900):
     def redrawAllWrapper(canvas, data):
         canvas.delete(ALL)
         redrawAll(canvas, data)
@@ -143,9 +140,10 @@ def run(width=800, height=900):
     data.width = width
     data.height = height
     data.timerDelay = 100 # milliseconds
-    init(data)
+    init(data, state, agent)
     # create the root and the canvas
     root = Tk()
+    data.root = root
     canvas = Canvas(root, width=data.width, height=data.height)
     canvas.pack()
     # set up events
@@ -157,5 +155,3 @@ def run(width=800, height=900):
     # and launch the app
     root.mainloop()  # blocks until window is closed
     print("bye!")
-
-run(400, 400)
