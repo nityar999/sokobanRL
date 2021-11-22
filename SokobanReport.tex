@@ -12,11 +12,14 @@
 \usepackage{microtype}      % microtypography
 \usepackage{xcolor}         % colors
 \usepackage{enumitem}
-\usepackage{algorithm}
-\usepackage{algpseudocode}
 \usepackage{fancyhdr}
+\usepackage{algorithmicx, algpseudocode, algorithm, float}
 \usepackage{graphicx}
-% \usepackage{comment}
+\graphicspath{ {images/} }
+\usepackage{wrapfig}
+\usepackage{subfigure}
+\usepackage{caption}
+\usepackage{subcaption}
 
 %\usepackage[T1]{fontenc}    % use 8-bit T1 fonts
 %\usepackage{hyperref}       % hyperlinks
@@ -32,7 +35,6 @@
 %\usepackage{amsmath}
 %\usepackage[legalpaper, margin=1in]{geometry}
 
-
 \title{CS271 Project Draft Design: Sokoban}
 
 \author{
@@ -40,26 +42,26 @@
   Department of Computer Science\\
   University of California, Irvine\\
   Irvine, CA 92697\\
-  \texttt{nraju1@uci.edu} \\
+  \texttt{nraju1@uci.edu} 
    \And
   Akshita Singh \\
   Department of Computer Science\\
   University of California, Irvine\\
   Irvine, CA 92697\\
-  \texttt{akshis2@uci.edu} \\
+  \texttt{akshis2@uci.edu} 
    \And
   Almendra Salgado Gatica \\
   Department of Computer Science\\
   University of California, Irvine\\
   Irvine, CA 92697\\
-  \texttt{arsalgad@uci.edu} \\
+  \texttt{arsalgad@uci.edu} 
 }
 \begin{document}
 
 \maketitle
 
 %\begin{abstract}
-    
+
 %  The abstract paragraph should be indented \nicefrac{1}{2}~inch (3~picas) on
 %  both the left- and right-hand margins. Use 10~point type, with a vertical
 %  spacing (leading) of 11~points.  The word \textbf{Abstract} must be centered,
@@ -69,7 +71,9 @@
 
 \section{Introduction}
 
-Sokoban is a part puzzle, part video game in which a player (Sokoban) pushes around boxes such that they end up in storage locations which are pre-determined by a game level. Sokoban runs into walls and other boxes along the way and whether or not it can navigate its way around such roadblocks is what forms the crux of this game. We have developed an AI agent for Sokoban. Our project aims to develop a reasonably intelligent AI Sokoban that can handle multiple configurations of walls, boxes, and storages, all with varying complexities. To make this happen, we called on to the Q-Learning algorithm from within the larger umbrella of Reinforcement Learning and Markov Decision Processes. Besides that, we invested in identifying some efficient approaches to identifying as many deadlock scenarios as possible, if not all. 
+Sokoban is a part puzzle, part video game in which a player (Sokoban) pushes around boxes such that they end up in storage locations which are pre-determined by a game level. Sokoban runs into walls and other boxes along the way and whether or not it can navigate its way around such roadblocks is what forms the crux of this game. 
+
+We have developed an AI agent for Sokoban. Our project aims to develop a reasonably intelligent AI Sokoban that can handle multiple configurations of walls, boxes, and storages, all with varying complexities. To make this happen, we called on to the Q-Learning algorithm from within the larger umbrella of Reinforcement Learning and Markov Decision Processes. Besides that, we invested in identifying some efficient approaches to identifying as many deadlock scenarios as possible, if not all. 
 
 % \section{Reinforcement Learning and Q- Learning}
 % \textbf{What is Reinforcement Learning?}: \\
@@ -116,10 +120,43 @@ Sokoban is a part puzzle, part video game in which a player (Sokoban) pushes aro
 
 \section{Approach To Game Development}
 
-We modularised our program and broke it down into 3 classes: 1) Agent, 2) State, and 3) Game.
+We modularised our program and broke it down into 3 modules: 1) Agent, 2) State, and 3) Game.
+
+\algdef{SE}% flags used internally to indicate we're defining a new block statement
+[STRUCT]% new block type, not to be confused with loops or if-statements
+{Struct}% "\Struct{name}" will indicate the start of the struct declaration
+{EndStruct}% "\EndStruct" ends the block indent
+[1]% There is one argument, which is the name of the data structure
+{\textbf{struct} \textsc{#1}}% typesetting of the start of a struct
+{\textbf{end struct}}% typesetting the end of the struct
 
 \subsection{Agent}
-The Agent class focused on the actions Sokoban would take given the rules of the game and the constraints of Q Learning Algorithm. We included 3 principal methods in this class:
+The Agent class focused on the actions Sokoban would take given the rules of the game and the constraints of Q Learning Algorithm. 
+
+\begin{algorithm}
+\floatname{algorithm}{Class}
+\caption{Agent}
+\begin{algorithmic}
+\Struct{Agent(object)}
+  \State $row$ : Actual row position in the board
+  \State $col$ : Actual column position in the board
+  \State $state$ : State object
+  \State $epsilon$ : Fraction of the time agents acts randomly
+  \State $gamma$ : Discount factor
+  \State $learning$ : Also known as alpha
+  \State $actions$ : Basic actions: LEFT, RIGHT, UP, DOWN
+  \State $history$ : Record of state and action taken from that state
+  \State $q$ : Q values \\
+  
+  \State def $agentMove(self, state)$
+  \State def $movePlayer(self, data, state, action)$
+  \State def $qValueUpdate(self, update)$
+\EndStruct
+\end{algorithmic}
+\label{Class}
+\end{algorithm}
+
+We described 3 principal methods in this class:
     
 \begin{enumerate}[label=\alph*)]
     \item \underline{AgentMove}: This function returns the action Sokoban takes using an $\epsilon$-greedy policy. This means Sokoban takes a random action with probability $\epsilon$ (initialized to $0.1$) and acts according to the policy it learns the remaining time. The pseudo-code for the same is described in detail in the next section.
@@ -128,41 +165,65 @@ The Agent class focused on the actions Sokoban would take given the rules of the
 \end{enumerate}
 
 \subsection{State}
-The state class plays the important role of deciding the fate of Sokoban given the level it has been placed into. It takes the level parameters (coordinates of the agent, walls, boxes, and goals) to construct the initial board. And with that information, Sokoban decides how to go about getting to the goal as quickly possible, with the help of the Agent class. We included 3 principal methods in this class: 
+The state class plays the important role of deciding the fate of Sokoban given the level it has been placed into. It takes the level parameters (coordinates of the agent, walls, boxes, and goals) to construct the initial board. And with that information, Sokoban decides how to go about getting to the goal as quickly possible, with the help of the Agent class. 
 
+\begin{algorithm}
+\floatname{algorithm}{Class}
+\caption{State}
+\begin{algorithmic}
+\Struct{State(object)}
+  \State $rows$ : Number of rows in the board
+  \State $cols$ : Number of colums in the board
+  \State $numWalls$ : Number of walls
+  \State $walls$ : Walls location in the board
+  \State $numBoxes$ : Number of boxes
+  \State $boxes$ : Boxes location in the board
+  \State $numStorage$ : Number of storages
+  \State $storage$ : Storage location in the board
+  \State $playerCol$ : Player inital column location 
+  \State $playerRow$ : Player inital row location
+  \State $board$ : Board creation for graphics
+  \State $safeSquares$ : Position of safe squares to move a box
+  \State $simpleDeadlocks()$ \\
+  
+  \State def $createBoard(self)$
+  \State def $simpleDeadlocks(self)$
+  \State def $depthFirstSearch(self, boxLocation)$
+  \State def $checkBoard(self, data, action)$
+  \State def $isGameOver(self, data, update)$
+  \State def $isDeadlock(self, pos, obs))$
+\EndStruct
+\end{algorithmic}
+\label{Class}
+\end{algorithm}
+
+We described 3 principal methods in this class:
+    
 \begin{enumerate}[label=\alph*)]
-    \item \underline{createBoard}: This function creates the structure of the board as specified by the project specifications. 
-    \begin{enumerate}
-        \item '\#' corresponds to a wall
-        \item '\$' corresponds to a box
-        \item '.' corresponds to a storage location
-        \item '@' corresponds to the agent location
-    \end{enumerate}
-    For example, for the below project specification, we will generate the below board.  
+    \item \underline{createBoard}: This function creates the structure of the board as specified by the project spec. 
     \begin{figure}[htp]
         \centering
-        \includegraphics[width=5cm]{Input.png}
-        \caption{Input Board}
+        \includegraphics[width=2cm]{Input.png}
+        \includegraphics[width=4cm]{board.png}
+        \caption{\emph{createBoard} takes in the input string and creates the Sokoban board}
     \end{figure} 
-    \begin{figure}[htp]
-        \centering
-        \includegraphics[width=5cm]{Board.png}
-        \caption{Initial State of Board}
-\end{figure} 
+% perhaps show a picture of a board with all the ###, $$$, @, ..
     \item \underline{checkBoard}: Given an action that takes Sokoban to an existing box location, this function returns the possible situations that the box might end up in if pushed. There are 4 such possible situations:
     
     \begin{enumerate}[label=\arabic*)]
-        \item The box is moved onto a storage location. 
-        \item The box is moved off storage location (this happens in case Sokoban ends up on a storage location).
+        \item The box moves onto a storage location. 
+        \item The box moves off of a storage location (this happens in case Sokoban ends up on a storage location).
         \item The box takes on the position next to a wall or another box in which case we might be in a deadlock position.
         \item The box moves into an empty square. 
     \end{enumerate}
     
-    \item \underline{isDeadlock} and \underline{SimpleDeadlock}: These functions implement 2 common deadlock scenarios, the details and pseudo-codes of which are discussed at length Deadlock Detection section 
+    \item \underline{isDeadlock} and \underline{SimpleDeadlock}: These functions implement 2 common deadlock scenarios, the details and pseudo-codes of which are discussed at length in the Deadlock Detection section. 
 \end{enumerate}
 
 \subsection{Game}
-This class essentially implement the Sokoban game. It consists of an assortment of functions that ensures Sokoban's timely movements. An important function is this class is \underline{timeFired}, which keeps the game loop going while its not over. In particular, it keeps calling on the following functions as long as we have not hit any of the criteria which end the game: 
+
+This module essentially implements the Sokoban game. It consists of an assortment of functions that ensures Sokoban's timely movements. An important function is this module is \underline{timerFired}, which keeps the game going while its not over. In particular, it keeps calling on the following functions as long as we have not hit any of the criteria which end the game: 
+
 
 \begin{enumerate}[label=\alph*)]
     \item \underline{agentMove}: ensures Sokoban keeps taking Q-Learning informed action.
@@ -170,6 +231,35 @@ This class essentially implement the Sokoban game. It consists of an assortment 
     \item \underline{movePlayer}: keeps moving Sokoban as long as the win condition has not been met, a deadlock has not been detected and we have not timed out.
     \item \underline{checkBoard}: keeps updating on a the results of the action taken by the agent, which could be moving a box, winning the game or reaching a deadlocked position.
 \end{enumerate}
+
+\begin{algorithm}
+    \caption{\textsc{timerFired}: Play the game}\label{euclid}
+    \hspace*{\algorithmicindent} \textbf{Input}: struct that groups an agent and state \\
+    \begin{algorithmic}
+    \If{isNotGameOver} 
+        \State $agent.agentMove$ Get action from $\epsilon$-greedy policy
+        \State $state.checkBoard$ Check for outcome
+        \State $agent.movePlayer$ Move the player through the board
+        \State $agent.qValueUpdate$ Update Q values
+    \EndIf 
+    \end{algorithmic}
+\end{algorithm}
+
+{
+\begin{wrapfigure}{l}{0.19\textwidth} %this figure will be at the right
+    \centering
+    \includegraphics[width=0.19\textwidth]{board.png}
+\end{wrapfigure}
+
+As a very basic graphic design, we use Canvas\footnote{https://tkdocs.com/tutorial/canvas.html} to implement a rudimentary Sokoban GUI game. 
+
+\begin{enumerate}[label=\alph*)]
+    \item Player: It is represented as an \textbf{Red Circle}.
+    \item Box: It is represented as an \textbf{Brown Rectangle}.
+    \item Wall: It is represented as an \textbf{Beige Rectangle}.
+    \item Storage: It is represented as an \textbf{Pink Circle}.
+\end{enumerate}
+}
 
 \section{Q-Learning Algorithm}
 
@@ -181,10 +271,12 @@ and updates $Q(S,A)$ accordingly. Q-Learning allows the agent to continue learni
 
 We set discount factor $\gamma$ to $0.9$ as we want to agent to value long term rewards as too much short sightedness can lead to early game deadlocks. The agent chooses moves according to an $\epsilon$-greedy policy, where $\epsilon$ is initially $0.1$. We want to find a balance between exploration and exploitation where the agent spends spends some time exploring new moves and the remaining time acting according according to learned policy. We initialize the learning rate $\alpha$ to $0.5$. We can reduce the values of $\alpha$ and $\epsilon$ as the agent learns so we eventually converge to an optimal policy. 
 
+The agent selects moves according to an $\epsilon$-greedy policy. With probability $\epsilon$, the agent moves in one of the cardinal directions randomly. The remaining time, the agent chooses a move given it's current state that has the maximum q value. This allows us to find the right balance between exploring new moves and exploiting existing knowledge.  $\epsilon$ is initially chosen to be $0.1$ and this value is decreased over time so the behaviour of the agent eventually converges. Discount factor $\gamma$ is set to $0.9$ so the agent will value long term rewards. The learning rate $\alpha$ is set to $0.5$.
+
 \begin{algorithm}
-    \caption{Function that decides Agent Move based on Q-Learning Algorithm}\label{euclid}
+    \caption{\textsc{agentMove}: Function that decides Agent Move based on Q-Learning Algorithm}\label{euclid}
     \hspace*{\algorithmicindent} \textbf{Input}: \emph{state} of the board \\
-    \hspace*{\algorithmicindent} \textbf{Output}: action according to the Q-Learning  Algorithm \\
+    \hspace*{\algorithmicindent} \textbf{Output}: \emph{action} according to the Q-Learning  Algorithm \\
     \begin{algorithmic}
     \State $state \gets$ the structure of the board as defined by walls, boxes etc.
     \State $actions \gets$ a list of possible moves (up, down, left right)
@@ -206,7 +298,7 @@ We set discount factor $\gamma$ to $0.9$ as we want to agent to value long term 
 \end{algorithm}
 
 \begin{algorithm}
-    \caption{Function to Update Q Values Using the Q-Learning Formula}\label{euclid}
+    \caption{\textsc{qValueUpdate}: Function to Update Q Values Using the Q-Learning Formula}\label{euclid}
     \hspace*{\algorithmicindent} \textbf{Input}: result of an action \emph{update} (ex. deadlock, goal etc. \\
     \hspace*{\algorithmicindent} \textbf{Output}: None (the function updates Q Value) \\
     \begin{algorithmic}
@@ -214,8 +306,8 @@ We set discount factor $\gamma$ to $0.9$ as we want to agent to value long term 
     \State $history \gets$ history of all \emph{states} and \emph{actions} up until the last one
     \State $reward \gets$ reward on taking a certain action, initially set to -1
     \State $\alpha \gets$ Discount rate, which is some constant between 0 and 1
-    \State $\gamma \gets$ Learning rate, which is Some constant between 0 and 1 \\
-    // Get second last (time t) and last (time) actions and states from the history 
+    \State $\gamma \gets$ Learning rate, which is Some constant between 0 and 1
+    %// Get second last (time t) and last (time) actions and states from the history 
     \State $s_0 \gets$ second last state (at time $t$)
     \State $s_1 \gets$ last state (at time $t+1$)
     \State $a_0 \gets$ second last action (at time $t$)
@@ -235,15 +327,15 @@ We set discount factor $\gamma$ to $0.9$ as we want to agent to value long term 
         \State $reward = -1$
     \EndIf \\
     
-    \State $currQValue \gets$ the current Q value \\
-    // Update the q-value using the formula $Q(S,A) \leftarrow Q(S,A) + \alpha(R + \gamma max_{\alpha'}Q(S',A') - Q(S,A))$ \\
+    \State $currQValue \gets$ the current Q value
+    %// Update the q-value using the formula $Q(S,A) \leftarrow Q(S,A) + \alpha(R + \gamma max_{\alpha'}Q(S',A') - Q(S,A))$ \\
     \State $q[s_0][a_1] \gets q[s_0][a_0] + \alpha * (reward + \gamma * (max(q[s_1][a_1]) - currQValue))$
     \end{algorithmic}
 \end{algorithm}
 
 \section{Deadlock Detection}
 
-Sokoban is the kind of puzzle where many mistakes are irreversible, called deadlocks. This problem is particularly concerning if we work with RL (as compared to a search algorithm such as A*), which does not think ahead. Thus, it is imperative that we try to identify and fix as many deadlocks as possible, before the start of the game or while we are playing and before the next action is taken.  
+Sokoban is the kind of puzzle where many mistakes are irreversible and lead to deadlocked positions. This problem is particularly concerning if we work with RL (as compared to a search algorithm such as A*), which does not think ahead. Thus, it is imperative that we try to identify and fix as many deadlocks as possible, before the start of the game or while we are playing and before the next action is taken.  
 
 \subsection{Types of Deadlocks}
 \begin{enumerate}
@@ -262,19 +354,16 @@ Sokoban is the kind of puzzle where many mistakes are irreversible, called deadl
 We have tried to address some of the deadlocks in our game and plan to include others if time permits. 
 
 \subsection{Simple Deadlock Detection Algorithm}
-This function essentially flips the Sokoban game over. We start by placing the box on each possible storage location, and then we pull that box back to every possible legal square using depth first search. All the squares that the box visits, starting from each possible storage location are marked as a safe location.
+This function essentially flips the Sokoban game over. We start by placing the box on each possible storage location, and then we pull that box back to every possible legal square. All the squares that the box visits, starting from each possible storage location is marked as a safe location.
+
 \begin{figure}[htp]
         \centering
-        \includegraphics[width=5cm]{Board.png}
-        \caption{Initial State of Board}
-\end{figure} 
-\begin{figure}[htp]
-        \centering
-        \includegraphics[width=5cm]{Deadlock.png}
-        \caption{Blue squares represent safe locations for boxes, white squares represent deadlock locations}
-\end{figure} 
+        \includegraphics[width=4cm]{Deadlock.png}
+        \caption{Blue squares indicate safe locations for boxes, white squares indicate simple deadlock positions that will end the game}
+    \end{figure} 
+
 \begin{algorithm}
-    \caption{Simple Deadlock Detection}\label{euclid}
+    \caption{\textsc{simpleDeadlocks}: Simple Deadlock Detection}\label{euclid}
     \hspace*{\algorithmicindent} \textbf{Input}: location of the box \emph{boxLocation} \\
     \hspace*{\algorithmicindent} \textbf{Output}: recursive call to the Simple Deadlock Function \\
     \begin{algorithmic}
@@ -293,7 +382,7 @@ This function essentially flips the Sokoban game over. We start by placing the b
     \EndFor
     \end{algorithmic}
 \end{algorithm}
-
+\newpage
 %\textbf{if}
 %1) \emph{newLocation} within the bounds of the game level, AND
 %2) \emph{newLocation} is not a wall, AND 
@@ -301,8 +390,10 @@ This function essentially flips the Sokoban game over. We start by placing the b
 \newpage
 \subsection{Freeze Deadlock Detection Algorithm}
 
+This function detects if there are obstacles around the box that do not allow it to move, either walls or another boxes.
+
 \begin{algorithm}
-    \caption{Freeze Deadlock Detection}\label{euclid}
+    \caption{\textsc{isDeadlock}: Freeze Deadlock Detection}\label{euclid}
     \hspace*{\algorithmicindent} \textbf{Input}: expected position of the agent \emph{posA} \\
     \hspace*{\algorithmicindent} \textbf{Output}: expected position of the obstacle \emph{posO} \\
     \begin{algorithmic}
@@ -311,15 +402,16 @@ This function essentially flips the Sokoban game over. We start by placing the b
     \If{the expected position of obstacle is above \textbf{or} below the expected position of the agent (Vertical Analysis)} 
         \If{the square on the left the agent contain either boxes \textbf{or} walls}
             \State return True
-        \ElseIf{the square on the right the agent contain either boxes \textbf{or} walls}
+        \ElsIf{the square on the right the agent contain either boxes \textbf{or} walls}
             \State return True
         \Else
             \State return False
         \EndIf
+
     \ElseIf{ the expected position of obstacle is to the left or right of the expected position of the agent (Horizontal Analysis)}
         \If{the square immediately above the agent contains either boxes \textbf{or} walls}
             \State return True
-        \ElseIf{the square immediately below the agent contains either boxes \textbf{or} walls}
+        \ElsIf{the square immediately below the agent contains either boxes \textbf{or} walls}
             \State return True
         \Else
             \State return False
@@ -365,14 +457,16 @@ The Sokoban AI can be improved further with some the following considerations:
     \item Macro Moves: Currently our model uses movement in the cardinal directions as actions the agent can take. By defining the actions the agent can take to be macro moves (for example a move could be, move to the nearest box not on a storage location and move it in one of the four directions). This would reduce a lot of time spent in exploration as currently the agent spends a lot of time moving in the board without interacting with any boxes.
     \item Heuristics: The agent moves according to an $\epsilon$-greedy policy so it either moves randomly or according to the policy learned so far. We can use heuristics such as distance to a box and expected number of moves to move a box to a goal to improve the performance of the agent, especially in the early game when most q values are still $0$. 
     \item Deep Q-Learning: As our state (and action) space gets larger as the levels get more complicated, a tabular record of the states and actions can become more and more cumbersome and inefficient. In such scenarios, calling on to deep neural networks to help us generalize across states.
+    \item Macro moves: Currently our implementations gives the agent four possible moves from every location on the board - Up, Down, Left, Right. We can reduce the time the agent spends exploring the board by grouping simple moves into macro moves - for example by defining one move to be move to the nearest box and push it one step. 
+    \item Heuristics: We can further inform our agents decisions by using heuristics to guide it's behaviour. For example, we could use distance to boxes that are not on storage locations, expected number of moves to move a box to a storage location to reduce the time the agent spends moving without interacting with any boxes. 
     \item Identifying special cases: Although including a special instance can be very risky in case it fails on higher levels, if we can confidently deduce some universal scenarios and account for them then that might make our algorithm a lot smarter. Nonetheless, we have chosen to not include any such cases as of now so as to push most of our improvements through Q-Learning. 
 \end{enumerate}
 
-\section{Random - DELETE LATER}
-https://www.researchgate.net/post/Reinforcement-learning-vs-heuristic-search \\
-https://github.com/XUHUAKing/sokoban-qlearning/blob/master/sokoban-solver-final-report.pdf \\
-https://github.com/XUHUAKing/sokoban-qlearning \\
-https://valohai.com/blog/reinforcement-learning-tutorial-basic-deep-q-learning/
+%\section{Random - DELETE LATER}
+%https://www.researchgate.net/post/Reinforcement-learning-vs-heuristic-search \\
+%https://github.com/XUHUAKing/sokoban-qlearning/blob/master/sokoban-solver-final-report.pdf \\
+%https://github.com/XUHUAKing/sokoban-qlearning \\
+%https://valohai.com/blog/reinforcement-learning-tutorial-basic-deep-q-learning/
 
 
 \end{document}
