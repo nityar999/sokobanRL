@@ -14,6 +14,8 @@
 \usepackage{enumitem}
 \usepackage{algorithm}
 \usepackage{algpseudocode}
+\usepackage{fancyhdr}
+\usepackage{graphicx}
 % \usepackage{comment}
 
 %\usepackage[T1]{fontenc}    % use 8-bit T1 fonts
@@ -56,13 +58,14 @@
 
 \maketitle
 
-\begin{abstract}
-  The abstract paragraph should be indented \nicefrac{1}{2}~inch (3~picas) on
-  both the left- and right-hand margins. Use 10~point type, with a vertical
-  spacing (leading) of 11~points.  The word \textbf{Abstract} must be centered,
-  bold, and in point size 12. Two line spaces precede the abstract. The abstract
-  must be limited to one paragraph.
-\end{abstract}
+%\begin{abstract}
+    
+%  The abstract paragraph should be indented \nicefrac{1}{2}~inch (3~picas) on
+%  both the left- and right-hand margins. Use 10~point type, with a vertical
+%  spacing (leading) of 11~points.  The word \textbf{Abstract} must be centered,
+%  bold, and in point size 12. Two line spaces precede the abstract. The abstract
+%  must be limited to one paragraph.
+%\end{abstract}
 
 \section{Introduction}
 
@@ -119,8 +122,8 @@ We modularised our program and broke it down into 3 classes: 1) Agent, 2) State,
 The Agent class focused on the actions Sokoban would take given the rules of the game and the constraints of Q Learning Algorithm. We included 3 principal methods in this class:
     
 \begin{enumerate}[label=\alph*)]
-    \item \underline{AgentMove}: This function returns the action Sokoban takes assuming its decision is informed by the Q-Learning criteria. The pseudo-code for the same is described in detail in the next section.
-    \item \underline{MoveAgent}: This function evaluates Sokoban's move given the rules of the game. It looks into the surrounding region once the agent takes an action and informs the game of any boxes Sokoban moved, or any obstacles (walls, deadlocks, bounds) that it confronted along the way. 
+    \item \underline{AgentMove}: This function returns the action Sokoban takes using an $\epsilon$-greedy policy. This means Sokoban takes a random action with probability $\epsilon$ (initialized to $0.1$) and acts according to the policy it learns the remaining time. The pseudo-code for the same is described in detail in the next section.
+    \item \underline{MovePlayer}: This function implement Sokoban's move given the rules of the game. It looks into the surrounding region once the agent takes an action and informs the game of any boxes Sokoban moved, or any obstacles (walls, deadlocks, bounds) that it confronted along the way. 
     \item \underline{qValueUpate}: This function updates the current q-value by loyally following the Q-Learning algorithm formula. The pseudo-code for this function is also detailed out in the next section. 
 \end{enumerate}
 
@@ -128,13 +131,30 @@ The Agent class focused on the actions Sokoban would take given the rules of the
 The state class plays the important role of deciding the fate of Sokoban given the level it has been placed into. It takes the level parameters (coordinates of the agent, walls, boxes, and goals) to construct the initial board. And with that information, Sokoban decides how to go about getting to the goal as quickly possible, with the help of the Agent class. We included 3 principal methods in this class: 
 
 \begin{enumerate}[label=\alph*)]
-    \item \underline{createBoard}: This function creates the structure of the board as specified by the project spec.  % perhaps show a picture of a board with all the ###, $$$, @, ..
+    \item \underline{createBoard}: This function creates the structure of the board as specified by the project specifications. 
+    \begin{enumerate}
+        \item '\#' corresponds to a wall
+        \item '\$' corresponds to a box
+        \item '.' corresponds to a storage location
+        \item '@' corresponds to the agent location
+    \end{enumerate}
+    For example, for the below project specification, we will generate the below board.  
+    \begin{figure}[htp]
+        \centering
+        \includegraphics[width=5cm]{Input.png}
+        \caption{Input Board}
+    \end{figure} 
+    \begin{figure}[htp]
+        \centering
+        \includegraphics[width=5cm]{Board.png}
+        \caption{Initial State of Board}
+\end{figure} 
     \item \underline{checkBoard}: Given an action that takes Sokoban to an existing box location, this function returns the possible situations that the box might end up in if pushed. There are 4 such possible situations:
     
     \begin{enumerate}[label=\arabic*)]
-        \item The box into a storage location. 
-        \item The box out of storage location (this happens in case Sokoban ends up on a storage location).
-        \item The box takes on the position of a wall or another box in which case we might be in a deadlock.
+        \item The box is moved onto a storage location. 
+        \item The box is moved off storage location (this happens in case Sokoban ends up on a storage location).
+        \item The box takes on the position next to a wall or another box in which case we might be in a deadlock position.
         \item The box moves into an empty square. 
     \end{enumerate}
     
@@ -142,13 +162,13 @@ The state class plays the important role of deciding the fate of Sokoban given t
 \end{enumerate}
 
 \subsection{Game}
-This class essentially implement the Sokoban game. It consists of an assortment of functions that ensures Sokoban's timely movements. An important function is this class is \underline{timeFired}, which keeps the game going while its not over. In particular, it keeps calling on the following functions as long as we have not hit any of the criteria which end the game: 
+This class essentially implement the Sokoban game. It consists of an assortment of functions that ensures Sokoban's timely movements. An important function is this class is \underline{timeFired}, which keeps the game loop going while its not over. In particular, it keeps calling on the following functions as long as we have not hit any of the criteria which end the game: 
 
 \begin{enumerate}[label=\alph*)]
     \item \underline{agentMove}: ensures Sokoban keeps taking Q-Learning informed action.
     \item \underline{qValueUpdate}: ensures the q-values keep getting getting updated according the Q-Learning formula. 
-    \item \underline{movePlayer}: keeps moving Sokoban as long as its sticking with the rules of the game.
-    \item \underline{checkBoard}: keeps updating on a possible fate of a box if an agent action pushes one.
+    \item \underline{movePlayer}: keeps moving Sokoban as long as the win condition has not been met, a deadlock has not been detected and we have not timed out.
+    \item \underline{checkBoard}: keeps updating on a the results of the action taken by the agent, which could be moving a box, winning the game or reaching a deadlocked position.
 \end{enumerate}
 
 \section{Q-Learning Algorithm}
@@ -157,7 +177,9 @@ This class essentially implement the Sokoban game. It consists of an assortment 
 Sokoban is a puzzle with very few consistencies to exploit. Our AI Sokoban has no idea where the walls, boxes, and storage locations would be as we take it from one level to another. The real "reward" is successfully pushing all boxes in storage locations. Thus Sokoban is a game with sparse rewards and not much information and consistencies to with. This makes it apt for an algorithm that learns and improves along the way, instead of waiting for the whole episode to get over to learn anything at all.
 
 At each step, Q-Learning computes the error after learning from a policy outside its domain $$\alpha(R + \gamma max_{\alpha'}Q(S',A') - Q(S,A))$$ 
-and updates $Q(S,A)$ accordingly. Because Q-Learning does not follow an policy, it can continue learning while changing policies. This flexibility of changing policies and hence ensuring optimality is what drew us towards Q-Learning as against SARSA. 
+and updates $Q(S,A)$ accordingly. Q-Learning allows the agent to continue learning while changing updating the policies. This flexibility of changing policies and hence ensuring optimality is what drew us towards Q-Learning as against SARSA. 
+
+We set discount factor $\gamma$ to $0.9$ as we want to agent to value long term rewards as too much short sightedness can lead to early game deadlocks. The agent chooses moves according to an $\epsilon$-greedy policy, where $\epsilon$ is initially $0.1$. We want to find a balance between exploration and exploitation where the agent spends spends some time exploring new moves and the remaining time acting according according to learned policy. We initialize the learning rate $\alpha$ to $0.5$. We can reduce the values of $\alpha$ and $\epsilon$ as the agent learns so we eventually converge to an optimal policy. 
 
 \begin{algorithm}
     \caption{Function that decides Agent Move based on Q-Learning Algorithm}\label{euclid}
@@ -168,17 +190,16 @@ and updates $Q(S,A)$ accordingly. Because Q-Learning does not follow an policy, 
     \State $actions \gets$ a list of possible moves (up, down, left right)
     \State $q \gets$ a dictionary that maps the state to q values possible for that state
     \State $epsilon \gets$ Initialize to some number between 0 and 1
-    \State $probabilities \gets$ Randomly select between 0 and 1 \\
-    \If{$ probabilities < epsilon$} 
-        \State Pick the greedy action (randomly select a move)
+    \State $probability \gets$ Randomly select between 0 and 1 \\
+    \If{$ probability < epsilon$} 
+        \State Randomly select a move
     \Else
-        \If If the current state matches the state (key) within the action function (q) % need to revisit explanation
-            \State $qScore \gets$ all the possible q values for the 4 actions
-            \State $actionIndex \gets$ index for the action with the highest q value, i.e. max(\emph{qScore})
-            \State $action \gets$ take the action that lies in the \emph{actionIndex}
+        \If {If current state matches the state (key) within the action function (q)}  % need to revisit explanation
+            \State $qScore \gets$ the q values for the 4 actions that correspond to the current state
+            \State $action \gets$ take the action that corresponds to the action with highest $qScore$
         \Else
-            \State Initialize \emph{q} with current state, with q values all initialized to 0
-            \State And select a random action from the 4 possible actions
+            \State Initialize current state in the dictionary, with q values for all possible actions initialized to 0
+            \State Select a random action from the 4 possible actions
         \EndIf
     \EndIf 
     \end{algorithmic}
@@ -222,7 +243,7 @@ and updates $Q(S,A)$ accordingly. Because Q-Learning does not follow an policy, 
 
 \section{Deadlock Detection}
 
-Sokoban is the kind of puzzle where many mistakes are irreversible (hence deadlocks). This problem is particularly concerning if we work with RL (as compared to a search algorithm such as A*), which does not think ahead. Thus, it is imperative that we try to identify and fix as many deadlocks as possible, before the start of the game or while we are playing and before the next action is taken.  
+Sokoban is the kind of puzzle where many mistakes are irreversible, called deadlocks. This problem is particularly concerning if we work with RL (as compared to a search algorithm such as A*), which does not think ahead. Thus, it is imperative that we try to identify and fix as many deadlocks as possible, before the start of the game or while we are playing and before the next action is taken.  
 
 \subsection{Types of Deadlocks}
 \begin{enumerate}
@@ -241,8 +262,17 @@ Sokoban is the kind of puzzle where many mistakes are irreversible (hence deadlo
 We have tried to address some of the deadlocks in our game and plan to include others if time permits. 
 
 \subsection{Simple Deadlock Detection Algorithm}
-This function essentially flips the Sokoban game over. We start by placing the box on each possible storage location, and then we pull that box back to every possible legal square. All the squares that the box visits, starting from each possible storage location is marked as a safe location.
-
+This function essentially flips the Sokoban game over. We start by placing the box on each possible storage location, and then we pull that box back to every possible legal square using depth first search. All the squares that the box visits, starting from each possible storage location are marked as a safe location.
+\begin{figure}[htp]
+        \centering
+        \includegraphics[width=5cm]{Board.png}
+        \caption{Initial State of Board}
+\end{figure} 
+\begin{figure}[htp]
+        \centering
+        \includegraphics[width=5cm]{Deadlock.png}
+        \caption{Blue squares represent safe locations for boxes, white squares represent deadlock locations}
+\end{figure} 
 \begin{algorithm}
     \caption{Simple Deadlock Detection}\label{euclid}
     \hspace*{\algorithmicindent} \textbf{Input}: location of the box \emph{boxLocation} \\
@@ -268,7 +298,7 @@ This function essentially flips the Sokoban game over. We start by placing the b
 %1) \emph{newLocation} within the bounds of the game level, AND
 %2) \emph{newLocation} is not a wall, AND 
 %3) \emph{twoStepsLocation} is not a wall either
-
+\newpage
 \subsection{Freeze Deadlock Detection Algorithm}
 
 \begin{algorithm}
@@ -286,7 +316,7 @@ This function essentially flips the Sokoban game over. We start by placing the b
         \Else
             \State return False
         \EndIf
-    \ElseIf{the expected position of obstacle is to the left or right of the expected position of the agent (Horizontal Analysis)}
+    \ElseIf{ the expected position of obstacle is to the left or right of the expected position of the agent (Horizontal Analysis)}
         \If{the square immediately above the agent contains either boxes \textbf{or} walls}
             \State return True
         \ElseIf{the square immediately below the agent contains either boxes \textbf{or} walls}
@@ -326,13 +356,14 @@ This function essentially flips the Sokoban game over. We start by placing the b
 %(if \emph{(posA[0] + 1, posA[1])} in self.boxes or \emph{(posA[0] + 1, posA[1])} in self.walls: return True)
 
 %\textbf{else} return False
-
-\section{Conclusion}
+\newpage
 
 \section{Future Considerations}
 The Sokoban AI can be improved further with some the following considerations:
 \begin{enumerate}
     \item More deadlock detections: Thus far, we have accounted for Simple deadlocks (using pullback DFS strategy), and Freeze deadlocks (using the vertical/horizontal neighborhood search strategy). We can make the agent smarter by identifying more deadlock patterns. In particular, Corral deadlock algorithms would contribute to the game's efficiency.
+    \item Macro Moves: Currently our model uses movement in the cardinal directions as actions the agent can take. By defining the actions the agent can take to be macro moves (for example a move could be, move to the nearest box not on a storage location and move it in one of the four directions). This would reduce a lot of time spent in exploration as currently the agent spends a lot of time moving in the board without interacting with any boxes.
+    \item Heuristics: The agent moves according to an $\epsilon$-greedy policy so it either moves randomly or according to the policy learned so far. We can use heuristics such as distance to a box and expected number of moves to move a box to a goal to improve the performance of the agent, especially in the early game when most q values are still $0$. 
     \item Deep Q-Learning: As our state (and action) space gets larger as the levels get more complicated, a tabular record of the states and actions can become more and more cumbersome and inefficient. In such scenarios, calling on to deep neural networks to help us generalize across states.
     \item Identifying special cases: Although including a special instance can be very risky in case it fails on higher levels, if we can confidently deduce some universal scenarios and account for them then that might make our algorithm a lot smarter. Nonetheless, we have chosen to not include any such cases as of now so as to push most of our improvements through Q-Learning. 
 \end{enumerate}
