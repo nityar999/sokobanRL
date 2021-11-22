@@ -35,7 +35,6 @@
 %\usepackage{amsmath}
 %\usepackage[legalpaper, margin=1in]{geometry}
 
-
 \title{CS271 Project Draft Design: Sokoban}
 
 \author{
@@ -197,29 +196,31 @@ The state class plays the important role of deciding the fate of Sokoban given t
 \label{Class}
 \end{algorithm}
 
-\begin{wrapfigure}{r}{0.18\textwidth} %this figure will be at the right
-    \centering
-    \includegraphics[width=0.18\textwidth]{board}
-\end{wrapfigure}
-
 We described 3 principal methods in this class:
     
 \begin{enumerate}[label=\alph*)]
-    \item \underline{createBoard}: This function creates the structure of the board as specified by the project spec.  % perhaps show a picture of a board with all the ###, $$$, @, ..
+    \item \underline{createBoard}: This function creates the structure of the board as specified by the project spec. 
+    \begin{figure}[htp]
+        \centering
+        \includegraphics[width=2cm]{Input.png}
+        \includegraphics[width=4cm]{board.png}
+        \caption{\emph{createBoard} takes in the input string and creates the Sokoban board}
+    \end{figure} 
+% perhaps show a picture of a board with all the ###, $$$, @, ..
     \item \underline{checkBoard}: Given an action that takes Sokoban to an existing box location, this function returns the possible situations that the box might end up in if pushed. There are 4 such possible situations:
     
     \begin{enumerate}[label=\arabic*)]
-        \item The box into a storage location. 
-        \item The box out of storage location (this happens in case Sokoban ends up on a storage location).
-        \item The box takes on the position of a wall or another box in which case we might be in a deadlock.
+        \item The box moves onto a storage location. 
+        \item The box moves off of a storage location (this happens in case Sokoban ends up on a storage location).
+        \item The box takes on the position next to a wall or another box in which case we might be in a deadlock position.
         \item The box moves into an empty square. 
     \end{enumerate}
     
-    \item \underline{isDeadlock} and \underline{SimpleDeadlock}: These functions implement 2 common deadlock scenarios, the details and pseudo-codes of which are discussed at length Deadlock Detection section. 
+    \item \underline{isDeadlock} and \underline{SimpleDeadlock}: These functions implement 2 common deadlock scenarios, the details and pseudo-codes of which are discussed at length in the Deadlock Detection section. 
 \end{enumerate}
 
 \subsection{Game}
-This module essentially implement the Sokoban game. It consists of an assortment of functions that ensures Sokoban's timely movements. An important function is this module is \underline{timerFired}, which keeps the game going while its not over. In particular, it keeps calling on the following functions as long as we have not hit any of the criteria which end the game: 
+This module essentially implements the Sokoban game. It consists of an assortment of functions that ensures Sokoban's timely movements. An important function is this module is \underline{timerFired}, which keeps the game going while its not over. In particular, it keeps calling on the following functions as long as we have not hit any of the criteria which end the game: 
 
 \begin{enumerate}[label=\alph*)]
     \item \underline{agentMove}: ensures Sokoban keeps taking Q-Learning informed action.
@@ -233,7 +234,7 @@ This module essentially implement the Sokoban game. It consists of an assortment
     \hspace*{\algorithmicindent} \textbf{Input}: struct that groups an agent and state \\
     \begin{algorithmic}
     \If{isNotGameOver} 
-        \State $agent.agentMove$ Get Action from epsilon greedy policy
+        \State $agent.agentMove$ Get action from $\epsilon$-greedy policy
         \State $state.checkBoard$ Check for outcome
         \State $agent.movePlayer$ Move the player through the board
         \State $agent.qValueUpdate$ Update Q values
@@ -244,10 +245,8 @@ This module essentially implement the Sokoban game. It consists of an assortment
 {
 \begin{wrapfigure}{l}{0.19\textwidth} %this figure will be at the right
     \centering
-    \includegraphics[width=0.19\textwidth]{graphic_board}
+    \includegraphics[width=0.19\textwidth]{board.png}
 \end{wrapfigure}
-
-\subsubsection{Graphics}
 
 As a very basic graphic design, we use Canvas\footnote{https://tkdocs.com/tutorial/canvas.html} to implement a rudimentary Sokoban GUI game. 
 
@@ -267,23 +266,24 @@ Sokoban is a puzzle with very few consistencies to exploit. Our AI Sokoban has n
 At each step, Q-Learning computes the error after learning from a policy outside its domain $$\alpha(R + \gamma max_{\alpha'}Q(S',A') - Q(S,A))$$ 
 and updates $Q(S,A)$ accordingly. Because Q-Learning does not follow an policy, it can continue learning while changing policies. This flexibility of changing policies and hence ensuring optimality is what drew us towards Q-Learning as against SARSA. 
 
+The agent selects moves according to an $\epsilon$-greedy policy. With probability $\epsilon$, the agent moves in one of the cardinal directions randomly. The remaining time, the agent chooses a move given it's current state that has the maximum q value. This allows us to find the right balance between exploring new moves and exploiting existing knowledge.  $\epsilon$ is initially chosen to be $0.1$ and this value is decreased over time so the behaviour of the agent eventually converges. Discount factor $\gamma$ is set to $0.9$ so the agent will value long term rewards. The learning rate $\alpha$ is set to $0.5$.
+
 \begin{algorithm}
     \caption{\textsc{agentMove}: Function that decides Agent Move based on Q-Learning Algorithm}\label{euclid}
     \hspace*{\algorithmicindent} \textbf{Input}: \emph{state} of the board \\
-    \hspace*{\algorithmicindent} \textbf{Output}: action according to the Q-Learning  Algorithm \\
+    \hspace*{\algorithmicindent} \textbf{Output}: \emph{action} according to the Q-Learning  Algorithm \\
     \begin{algorithmic}
     \State $state \gets$ the structure of the board as defined by walls, boxes etc.
     \State $actions \gets$ a list of possible moves (up, down, left right)
     \State $q \gets$ a dictionary that maps the state to q values possible for that state
     \State $epsilon \gets$ Initialize to some number between 0 and 1
-    \State $probabilities \gets$ Randomly select between 0 and 1 \\
-    \If{$ probabilities < epsilon$} 
-        \State Pick the greedy action (randomly select a move)
+    \State $probability \gets$ Randomly select between 0 and 1 \\
+    \If{$ probability < epsilon$} 
+        \State Randomly select a move
     \Else
-        \If If the current state matches the state (key) within the action function (q) % need to revisit explanation
+        \If {If the current state matches the state (key) within the action function (q)} % need to revisit explanation
             \State $qScore \gets$ all the possible q values for the 4 actions
-            \State $actionIndex \gets$ index for the action with the highest q value, i.e. max(\emph{qScore})
-            \State $action \gets$ take the action that lies in the \emph{actionIndex}
+            \State $action \gets$ take the action that corresponds to the maximum q value in $qScore$
         \Else
             \State Initialize \emph{q} with current state, with q values all initialized to 0
             \State And select a random action from the 4 possible actions
@@ -330,7 +330,7 @@ and updates $Q(S,A)$ accordingly. Because Q-Learning does not follow an policy, 
 
 \section{Deadlock Detection}
 
-Sokoban is the kind of puzzle where many mistakes are irreversible (hence deadlocks). This problem is particularly concerning if we work with RL (as compared to a search algorithm such as A*), which does not think ahead. Thus, it is imperative that we try to identify and fix as many deadlocks as possible, before the start of the game or while we are playing and before the next action is taken.  
+Sokoban is the kind of puzzle where many mistakes are irreversible and lead to deadlocked positions. This problem is particularly concerning if we work with RL (as compared to a search algorithm such as A*), which does not think ahead. Thus, it is imperative that we try to identify and fix as many deadlocks as possible, before the start of the game or while we are playing and before the next action is taken.  
 
 \subsection{Types of Deadlocks}
 \begin{enumerate}
@@ -350,6 +350,12 @@ We have tried to address some of the deadlocks in our game and plan to include o
 
 \subsection{Simple Deadlock Detection Algorithm}
 This function essentially flips the Sokoban game over. We start by placing the box on each possible storage location, and then we pull that box back to every possible legal square. All the squares that the box visits, starting from each possible storage location is marked as a safe location.
+
+\begin{figure}[htp]
+        \centering
+        \includegraphics[width=4cm]{Deadlock.png}
+        \caption{Blue squares indicate safe locations for boxes, white squares indicate simple deadlock positions that will end the game}
+    \end{figure} 
 
 \begin{algorithm}
     \caption{\textsc{simpleDeadlocks}: Simple Deadlock Detection}\label{euclid}
@@ -371,7 +377,7 @@ This function essentially flips the Sokoban game over. We start by placing the b
     \EndFor
     \end{algorithmic}
 \end{algorithm}
-
+\newpage
 %\textbf{if}
 %1) \emph{newLocation} within the bounds of the game level, AND
 %2) \emph{newLocation} is not a wall, AND 
@@ -437,13 +443,13 @@ This function detects if there are obstacles around the box that do not allow it
 
 %\textbf{else} return False
 
-\section{Conclusion}
-
 \section{Future Considerations}
 The Sokoban AI can be improved further with some the following considerations:
 \begin{enumerate}
     \item More deadlock detections: Thus far, we have accounted for Simple deadlocks (using pullback DFS strategy), and Freeze deadlocks (using the vertical/horizontal neighborhood search strategy). We can make the agent smarter by identifying more deadlock patterns. In particular, Corral deadlock algorithms would contribute to the game's efficiency.
     \item Deep Q-Learning: As our state (and action) space gets larger as the levels get more complicated, a tabular record of the states and actions can become more and more cumbersome and inefficient. In such scenarios, calling on to deep neural networks to help us generalize across states.
+    \item Macro moves: Currently our implementations gives the agent four possible moves from every location on the board - Up, Down, Left, Right. We can reduce the time the agent spends exploring the board by grouping simple moves into macro moves - for example by defining one move to be move to the nearest box and push it one step. 
+    \item Heuristics: We can further inform our agents decisions by using heuristics to guide it's behaviour. For example, we could use distance to boxes that are not on storage locations, expected number of moves to move a box to a storage location to reduce the time the agent spends moving without interacting with any boxes. 
     \item Identifying special cases: Although including a special instance can be very risky in case it fails on higher levels, if we can confidently deduce some universal scenarios and account for them then that might make our algorithm a lot smarter. Nonetheless, we have chosen to not include any such cases as of now so as to push most of our improvements through Q-Learning. 
 \end{enumerate}
 
