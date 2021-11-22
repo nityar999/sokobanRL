@@ -12,6 +12,7 @@
 \usepackage{microtype}      % microtypography
 \usepackage{xcolor}         % colors
 \usepackage{enumitem}
+\usepackage{fancyhdr}
 \usepackage{algorithmicx, algpseudocode, algorithm, float}
 \usepackage{graphicx}
 \graphicspath{ {images/} }
@@ -19,7 +20,6 @@
 \usepackage{subfigure}
 \usepackage{caption}
 \usepackage{subcaption}
-% \usepackage{comment}
 
 %\usepackage[T1]{fontenc}    % use 8-bit T1 fonts
 %\usepackage{hyperref}       % hyperlinks
@@ -61,6 +61,7 @@
 \maketitle
 
 %\begin{abstract}
+
 %  The abstract paragraph should be indented \nicefrac{1}{2}~inch (3~picas) on
 %  both the left- and right-hand margins. Use 10~point type, with a vertical
 %  spacing (leading) of 11~points.  The word \textbf{Abstract} must be centered,
@@ -158,8 +159,8 @@ The Agent class focused on the actions Sokoban would take given the rules of the
 We described 3 principal methods in this class:
     
 \begin{enumerate}[label=\alph*)]
-    \item \underline{AgentMove}: This function returns the action Sokoban takes assuming its decision is informed by the Q-Learning criteria. The pseudo-code for the same is described in detail in the next section.
-    \item \underline{MovePlayer}: This function evaluates Sokoban's move given the rules of the game. It looks into the surrounding region once the agent takes an action and informs the game of any boxes Sokoban moved, or any obstacles (walls, deadlocks, bounds) that it confronted along the way. 
+    \item \underline{AgentMove}: This function returns the action Sokoban takes using an $\epsilon$-greedy policy. This means Sokoban takes a random action with probability $\epsilon$ (initialized to $0.1$) and acts according to the policy it learns the remaining time. The pseudo-code for the same is described in detail in the next section.
+    \item \underline{MovePlayer}: This function implement Sokoban's move given the rules of the game. It looks into the surrounding region once the agent takes an action and informs the game of any boxes Sokoban moved, or any obstacles (walls, deadlocks, bounds) that it confronted along the way. 
     \item \underline{qValueUpate}: This function updates the current q-value by loyally following the Q-Learning algorithm formula. The pseudo-code for this function is also detailed out in the next section. 
 \end{enumerate}
 
@@ -220,13 +221,15 @@ We described 3 principal methods in this class:
 \end{enumerate}
 
 \subsection{Game}
+
 This module essentially implements the Sokoban game. It consists of an assortment of functions that ensures Sokoban's timely movements. An important function is this module is \underline{timerFired}, which keeps the game going while its not over. In particular, it keeps calling on the following functions as long as we have not hit any of the criteria which end the game: 
+
 
 \begin{enumerate}[label=\alph*)]
     \item \underline{agentMove}: ensures Sokoban keeps taking Q-Learning informed action.
     \item \underline{qValueUpdate}: ensures the q-values keep getting getting updated according the Q-Learning formula. 
-    \item \underline{movePlayer}: keeps moving Sokoban as long as its sticking with the rules of the game.
-    \item \underline{checkBoard}: keeps updating on a possible fate of a box if an agent action pushes one.
+    \item \underline{movePlayer}: keeps moving Sokoban as long as the win condition has not been met, a deadlock has not been detected and we have not timed out.
+    \item \underline{checkBoard}: keeps updating on a the results of the action taken by the agent, which could be moving a box, winning the game or reaching a deadlocked position.
 \end{enumerate}
 
 \begin{algorithm}
@@ -264,7 +267,9 @@ As a very basic graphic design, we use Canvas\footnote{https://tkdocs.com/tutori
 Sokoban is a puzzle with very few consistencies to exploit. Our AI Sokoban has no idea where the walls, boxes, and storage locations would be as we take it from one level to another. The real "reward" is successfully pushing all boxes in storage locations. Thus Sokoban is a game with sparse rewards and not much information and consistencies to with. This makes it apt for an algorithm that learns and improves along the way, instead of waiting for the whole episode to get over to learn anything at all.
 
 At each step, Q-Learning computes the error after learning from a policy outside its domain $$\alpha(R + \gamma max_{\alpha'}Q(S',A') - Q(S,A))$$ 
-and updates $Q(S,A)$ accordingly. Because Q-Learning does not follow an policy, it can continue learning while changing policies. This flexibility of changing policies and hence ensuring optimality is what drew us towards Q-Learning as against SARSA. 
+and updates $Q(S,A)$ accordingly. Q-Learning allows the agent to continue learning while changing updating the policies. This flexibility of changing policies and hence ensuring optimality is what drew us towards Q-Learning as against SARSA. 
+
+We set discount factor $\gamma$ to $0.9$ as we want to agent to value long term rewards as too much short sightedness can lead to early game deadlocks. The agent chooses moves according to an $\epsilon$-greedy policy, where $\epsilon$ is initially $0.1$. We want to find a balance between exploration and exploitation where the agent spends spends some time exploring new moves and the remaining time acting according according to learned policy. We initialize the learning rate $\alpha$ to $0.5$. We can reduce the values of $\alpha$ and $\epsilon$ as the agent learns so we eventually converge to an optimal policy. 
 
 The agent selects moves according to an $\epsilon$-greedy policy. With probability $\epsilon$, the agent moves in one of the cardinal directions randomly. The remaining time, the agent chooses a move given it's current state that has the maximum q value. This allows us to find the right balance between exploring new moves and exploiting existing knowledge.  $\epsilon$ is initially chosen to be $0.1$ and this value is decreased over time so the behaviour of the agent eventually converges. Discount factor $\gamma$ is set to $0.9$ so the agent will value long term rewards. The learning rate $\alpha$ is set to $0.5$.
 
@@ -281,12 +286,12 @@ The agent selects moves according to an $\epsilon$-greedy policy. With probabili
     \If{$ probability < epsilon$} 
         \State Randomly select a move
     \Else
-        \If {If the current state matches the state (key) within the action function (q)} % need to revisit explanation
-            \State $qScore \gets$ all the possible q values for the 4 actions
-            \State $action \gets$ take the action that corresponds to the maximum q value in $qScore$
+        \If {If current state matches the state (key) within the action function (q)}  % need to revisit explanation
+            \State $qScore \gets$ the q values for the 4 actions that correspond to the current state
+            \State $action \gets$ take the action that corresponds to the action with highest $qScore$
         \Else
-            \State Initialize \emph{q} with current state, with q values all initialized to 0
-            \State And select a random action from the 4 possible actions
+            \State Initialize current state in the dictionary, with q values for all possible actions initialized to 0
+            \State Select a random action from the 4 possible actions
         \EndIf
     \EndIf 
     \end{algorithmic}
@@ -382,7 +387,7 @@ This function essentially flips the Sokoban game over. We start by placing the b
 %1) \emph{newLocation} within the bounds of the game level, AND
 %2) \emph{newLocation} is not a wall, AND 
 %3) \emph{twoStepsLocation} is not a wall either
-
+\newpage
 \subsection{Freeze Deadlock Detection Algorithm}
 
 This function detects if there are obstacles around the box that do not allow it to move, either walls or another boxes.
@@ -402,7 +407,8 @@ This function detects if there are obstacles around the box that do not allow it
         \Else
             \State return False
         \EndIf
-    \ElsIf{the expected position of obstacle is to the left or right of the expected position of the agent (Horizontal Analysis)}
+
+    \ElseIf{ the expected position of obstacle is to the left or right of the expected position of the agent (Horizontal Analysis)}
         \If{the square immediately above the agent contains either boxes \textbf{or} walls}
             \State return True
         \ElsIf{the square immediately below the agent contains either boxes \textbf{or} walls}
@@ -442,11 +448,14 @@ This function detects if there are obstacles around the box that do not allow it
 %(if \emph{(posA[0] + 1, posA[1])} in self.boxes or \emph{(posA[0] + 1, posA[1])} in self.walls: return True)
 
 %\textbf{else} return False
+\newpage
 
 \section{Future Considerations}
 The Sokoban AI can be improved further with some the following considerations:
 \begin{enumerate}
     \item More deadlock detections: Thus far, we have accounted for Simple deadlocks (using pullback DFS strategy), and Freeze deadlocks (using the vertical/horizontal neighborhood search strategy). We can make the agent smarter by identifying more deadlock patterns. In particular, Corral deadlock algorithms would contribute to the game's efficiency.
+    \item Macro Moves: Currently our model uses movement in the cardinal directions as actions the agent can take. By defining the actions the agent can take to be macro moves (for example a move could be, move to the nearest box not on a storage location and move it in one of the four directions). This would reduce a lot of time spent in exploration as currently the agent spends a lot of time moving in the board without interacting with any boxes.
+    \item Heuristics: The agent moves according to an $\epsilon$-greedy policy so it either moves randomly or according to the policy learned so far. We can use heuristics such as distance to a box and expected number of moves to move a box to a goal to improve the performance of the agent, especially in the early game when most q values are still $0$. 
     \item Deep Q-Learning: As our state (and action) space gets larger as the levels get more complicated, a tabular record of the states and actions can become more and more cumbersome and inefficient. In such scenarios, calling on to deep neural networks to help us generalize across states.
     \item Macro moves: Currently our implementations gives the agent four possible moves from every location on the board - Up, Down, Left, Right. We can reduce the time the agent spends exploring the board by grouping simple moves into macro moves - for example by defining one move to be move to the nearest box and push it one step. 
     \item Heuristics: We can further inform our agents decisions by using heuristics to guide it's behaviour. For example, we could use distance to boxes that are not on storage locations, expected number of moves to move a box to a storage location to reduce the time the agent spends moving without interacting with any boxes. 
