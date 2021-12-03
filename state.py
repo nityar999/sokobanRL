@@ -59,20 +59,20 @@ class State(object):
 
     
     def checkBoard(self, data, action):
-        
+
         #print("# boxes: %s - Location of boxes:%s" % (self.numBoxes, self.boxes))
         #print("# storages: %s - Location of storages:%s" % (self.numStorage, self.storage))
 
         e_newPosition = (data.agent.row + action[0], data.agent.col + action[1])
-        ## Check if there is a box in the position the agent want to move
+        # Check if there is a box in the position the agent want to move
         if e_newPosition in self.boxes:
-            print('There is a BOX that the agent tries to move')
+            #print('There is a BOX that the agent tries to move')
             ## Expected new position for the box
             e_boxPosition = (e_newPosition[0] + action[0], e_newPosition[1] + action[1])
             #print("Expected new position of the box: (%s, %s)" % (e_boxPosition[0], e_boxPosition[1]))
 
             if e_newPosition in self.storage:
-                print("The agent tries to move off a box from a storage location")
+                #print("The agent tries to move off a box from a storage location")
                 return "box off"
             ## Check if it is a valid position for storage
             if e_boxPosition in self.storage:
@@ -81,9 +81,9 @@ class State(object):
                     return "box on"
             ## Can he move the box? Or there is any obstacle in the way of the box?
             elif e_boxPosition in self.walls or e_boxPosition in self.boxes:
-                print("There is an OBSTACLE")
+                #print("There is an OBSTACLE")
                 #print("Is deadlock? %s" % (self.isDeadlock(e_newPosition, e_boxPosition)))
-                print("Is a deadlock position?")
+                #print("Is a deadlock position?")
                 if self.isDeadlock(e_newPosition, e_boxPosition):
                     return "deadlock"
             else:
@@ -92,7 +92,7 @@ class State(object):
                 return "move box"
 
         # Check for timeout after 3 minutes
-        if data.time >= 1800:
+        if data.time >= 1200:
             return "timeout"
 
         # Check for simple deadlocks
@@ -112,14 +112,12 @@ class State(object):
             return True  
         if update == "timeout":
             return True
-        if update == "deadlock":
+        if update == "win":
             return True  
-        if update == "none":
-            return False
         return False
 
     def isDeadlock(self, pos, obs):
-        print("Agent position expected: %s, Obstacle expected position: %s" % (pos, obs))
+        #print("Agent position expected: %s, Obstacle expected position: %s" % (pos, obs))
         ## If the obstacle is up or down from the agent
         if obs[0] > pos[0] or obs[0] < pos[0]:
             ## Check LEFT and RIGHT obstacle from the agent expected position
