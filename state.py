@@ -1,5 +1,10 @@
 import readInput
 
+def isInBounds(row, col, rows, cols):
+        if row > 0 and row < rows - 1 and col > 0 and col < cols - 1:
+            return True
+        return False
+
 class State(object):
 
     def __init__(self, path):
@@ -15,6 +20,9 @@ class State(object):
         self.playerCol = playerX
         self.playerRow = playerY
         self.board = self.createBoard()
+        self.safeSquares = set()
+        self.simpleDeadlocks() # Use hash table to store locations that are safe - locations
+                               # not in this set are simple deadlocks
 
     # List representation of the board 
     def createBoard(self):
@@ -27,21 +35,44 @@ class State(object):
             board[row][col] = "."
         board[self.playerRow][self.playerCol] = "@"
         return board    
+
+    # General algorithm for simple deadlock detection is:
+    # For each storage location, locations reachable by box are safe (use DFS for search)
+    # Remaining locations are deadlocks
+    def simpleDeadlocks(self):
+        for storageLocation in self.storage:
+            # 'Place' box on storage location 
+            boxLocation = storageLocation
+            self.depthFirstSearch(boxLocation)
+
+
+    def depthFirstSearch(self, boxLocation):
+        if boxLocation in self.safeSquares: return 
+        row, col = boxLocation
+        for move in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            newLocation = (row + move[0], col + move[1])
+            twoStepsLocation = (newLocation[0] + move[0], newLocation[1] + move[1])
+            if ((isInBounds(newLocation[0], newLocation[1], self.rows, self.cols) and (newLocation not in self.walls) and 
+                (twoStepsLocation not in self.walls))):
+                self.safeSquares.add(boxLocation)
+                self.depthFirstSearch(newLocation)
+
     
     def checkBoard(self, data, action):
+
         #print("# boxes: %s - Location of boxes:%s" % (self.numBoxes, self.boxes))
         #print("# storages: %s - Location of storages:%s" % (self.numStorage, self.storage))
 
         e_newPosition = (data.agent.row + action[0], data.agent.col + action[1])
-        ## Check if there is a box in the position the agent want to move
+        # Check if there is a box in the position the agent want to move
         if e_newPosition in self.boxes:
-            print('There is a BOX that the agent tries to move')
+            #print('There is a BOX that the agent tries to move')
             ## Expected new position for the box
             e_boxPosition = (e_newPosition[0] + action[0], e_newPosition[1] + action[1])
             #print("Expected new position of the box: (%s, %s)" % (e_boxPosition[0], e_boxPosition[1]))
 
             if e_newPosition in self.storage:
-                print("The agent tries to move off a box from a storage location")
+                #print("The agent tries to move off a box from a storage location")
                 return "box off"
             ## Check if it is a valid position for storage
             if e_boxPosition in self.storage:
@@ -50,9 +81,9 @@ class State(object):
                     return "box on"
             ## Can he move the box? Or there is any obstacle in the way of the box?
             elif e_boxPosition in self.walls or e_boxPosition in self.boxes:
-                print("There is an OBSTACLE")
+                #print("There is an OBSTACLE")
                 #print("Is deadlock? %s" % (self.isDeadlock(e_newPosition, e_boxPosition)))
-                print("Is a deadlock position?")
+                #print("Is a deadlock position?")
                 if self.isDeadlock(e_newPosition, e_boxPosition):
                     return "deadlock"
             else:
@@ -60,17 +91,33 @@ class State(object):
                 ## and It doesn't have any obstacle in its way
                 return "move box"
 
-        if self.isGameOver(data):
-            return "win"
+        # Check for timeout after 3 minutes
+        if data.time >= 1200:
+            return "timeout"
 
-    def isGameOver(self, data): 
-        for (row, col) in self.boxes:
-            if (row, col) not in self.storage:
-                return False
-        return True
+        # Check for simple deadlocks
+        for box in self.boxes:
+            if box not in self.safeSquares:
+                return "deadlock"
+
+        # Check for win condition
+        for box in self.boxes:
+            if box not in self.storage:
+                return "none"
+
+        return "win"
+
+    def isGameOver(self, data, update):
+        if update == "deadlock":
+            return True  
+        if update == "timeout":
+            return True
+        if update == "win":
+            return True  
+        return False
 
     def isDeadlock(self, pos, obs):
-        print("Agent position expected: %s, Obstacle expected position: %s" % (pos, obs))
+        #print("Agent position expected: %s, Obstacle expected position: %s" % (pos, obs))
         ## If the obstacle is up or down from the agent
         if obs[0] > pos[0] or obs[0] < pos[0]:
             ## Check LEFT and RIGHT obstacle from the agent expected position
@@ -95,7 +142,7 @@ class State(object):
     def __str__(self):
         return str(self.board)
 
-    # Need hash and eq function to let us use State as a key in dictionaries
+    # Need hash and eq functions to let us use State as a key in dictionaries
     def __hash__(self):
         return hash(str(self.board))
 
