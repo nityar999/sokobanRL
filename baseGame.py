@@ -52,32 +52,35 @@ def timerFired(data):
     if not data.isGameOver:
 
         # Move happens every second
-        if data.time % 1 == 0:
+        
+        #if data.time % 1 == 0:
 
-            # Get Action from epsilon greedy policy
-            action = data.agent.agentMove(data.board)
+        # Get Action from epsilon greedy policy
+        action = data.agent.agentMove(data.board)
 
-            # Check for outcome 
-            update = data.state.checkBoard(data, action) 
+        # Check for outcome 
+        update = data.state.checkBoard(data, action) 
 
-            #print("ACTION: (%s, %s)" % (action[0], action[1]))
+        #print("ACTION: (%s, %s)" % (action[0], action[1]))
 
-            #print("EXPECTED OUTCOME: %s" % (update))
+        #print("EXPECTED OUTCOME: %s" % (update))
 
-            # Wait for 2 seconds
-            #time.sleep(5)
+        # Wait for 2 seconds
+        #time.sleep(5)
 
-            # Move Agent
-            data.agent.movePlayer(data, data.board, action)
+        # Move Agent
+        data.agent.movePlayer(data, data.board, action)
 
-            # Update q values
-            data.agent.qValueUpdate(update)
+        # Update q values
+        data.agent.qValueUpdate(update)
 
-            if update == "win":
-                print("WIN")
+        if update == "win":
+            data.winCount += 1
+            print("WIN")
 
-            # Check for game over condition 
-            data.isGameOver = data.state.isGameOver(data, update)
+        # Check for game over condition 
+        data.isGameOver = data.state.isGameOver(update)
+        if data.isGameOver: print(update)
     else:
         finalTime = time.perf_counter() - data.initialTime
         print("Execution Time: %s seconds" % (finalTime))
@@ -133,7 +136,7 @@ def redrawAll(canvas, data):
 # Run Game
 ####################################
 
-def runGame(state, agent, width=800, height=800):
+def runGame(state, agent, winCount, width=800, height=800):
     def redrawAllWrapper(canvas, data):
         canvas.delete(ALL)
         redrawAll(canvas, data)
@@ -158,6 +161,7 @@ def runGame(state, agent, width=800, height=800):
     data.width = width
     data.height = height
     data.timerDelay = 100 # milliseconds
+    data.winCount = winCount
     init(data, state, agent)
     # create the root and the canvas
     root = Tk()
