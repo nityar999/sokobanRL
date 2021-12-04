@@ -107,7 +107,7 @@ class State(object):
 
         return "win"
 
-    def isGameOver(self, data, update):
+    def isGameOver(self, update):
         if update == "deadlock":
             return True  
         if update == "timeout":
