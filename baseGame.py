@@ -53,37 +53,44 @@ def timerFired(data):
 
         # Move happens every second
         
-        #if data.time % 1 == 0:
+        if data.time % 1 == 0:
 
-        # Get Action from epsilon greedy policy
-        action = data.agent.agentMove(data.board)
+            # Get Action from epsilon greedy policy
+            action = data.agent.agentMove(data.state)
 
-        # Check for outcome 
-        update = data.state.checkBoard(data, action) 
+            # Check for outcome 
+            update = data.state.checkBoard(data, action) 
 
-        #print("ACTION: (%s, %s)" % (action[0], action[1]))
+            #print("ACTION: (%s, %s)" % (action[0], action[1]))
 
-        #print("EXPECTED OUTCOME: %s" % (update))
+            #print("EXPECTED OUTCOME: %s" % (update))
 
-        # Wait for 2 seconds
-        #time.sleep(5)
+            # Wait for 2 seconds
+            #time.sleep(5)
 
-        # Move Agent
-        data.agent.movePlayer(data, data.board, action)
+            # Move Agent
+            #data.agent.movePlayer(data, data.state, action)
 
-        # Update q values
-        data.agent.qValueUpdate(update)
+            # Update q values
+            data.agent.qValueUpdate(update)
 
-        if update == "win":
-            data.winCount += 1
-            print("WIN")
+            if update == "win":
+                data.winCount += 1
+                print("WIN")
 
-        # Check for game over condition 
-        data.isGameOver = data.state.isGameOver(update)
-        if data.isGameOver: print(update)
+            # Check for game over condition 
+            data.isGameOver = data.state.isGameOver(update)
+            if data.isGameOver: 
+                print(update)
     else:
         finalTime = time.perf_counter() - data.initialTime
-        print("Execution Time: %s seconds" % (finalTime))
+        #print("Execution Time: %s seconds" % (finalTime))
+
+        # List of moves til end of time
+        moves = []
+        for (state, action) in data.agent.history:
+            moves.append(action)
+            
         data.root.destroy()
 
 ####################################

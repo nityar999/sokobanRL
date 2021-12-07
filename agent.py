@@ -48,18 +48,30 @@ class Agent(object):
         
         # With probability epsilon, make move randomly 
         if probability < self.epsilon:
-            action = random.choice(self.actions)
+            actionIndex = random.randint(0, 3)
+            action = self.actions[actionIndex]
+            self.q[state] = [0, 0, 0, 0]
+
         # With probability 1 - epsilon, make the optimal move given by highest q value for state 
         else: 
             if str(state) in self.q:
                 qScore = self.q[str(state)]
-                actionIndex = qScore.index(max(qScore))
+                maxQ = max(qScore)
+                if maxQ == 0:
+                    indices = [i for i in range(len(qScore)) if qScore[i] == 0]
+                    actionIndex = random.choice(indices)
+                else:
+                    actionIndex = qScore.index(maxQ)
                 action = self.actions[actionIndex]
+  
             else:
                 self.q[str(state)] = [0, 0, 0, 0]
-                action = random.choice(self.actions)
+                actionIndex = random.randint(0, 3)
+                action = self.actions[actionIndex]
+
         # Update history 
         self.history.append((str(state), action))
+
         return action 
 
     def movePlayer(self, data, state, action):
@@ -104,8 +116,8 @@ class Agent(object):
         elif update == "box off": 
             reward = -10
         ## Adding rewards for just move a box
-        elif update == "move box":
-            reward = 5
+        #elif update == "move box":
+        #    reward = 5
         else:
             reward = -1
 

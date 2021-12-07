@@ -5,8 +5,8 @@ import gameNoAnimation
 from state import *
 from agent import *
 
-total = 500
-epsilon = 0.1
+total = 1
+epsilon = 0.2
 gamma = 0.9
 alpha = 0.5
 
@@ -22,7 +22,7 @@ with open("qvalues.json", "wt") as f:
 for i in range(total):
 
     # Setup Agent - Load Q Values, clear history
-    state = State("sokoban01.txt")
+    state = State("sokoban00.txt")
     agent = Agent(state.playerRow, state.playerCol, state, epsilon, gamma, alpha)
 
     # Decay epsilon value
@@ -30,16 +30,21 @@ for i in range(total):
 
     # Play Game - Comment out one of these function calls
     # With Animation
-    #baseGame.runGame(state, agent, winCount)
+    baseGame.runGame(state, agent, winCount)
 
     # Without Animation
-    winCount = gameNoAnimation.gameLoop(state, agent, winCount)
+    #winCount = gameNoAnimation.gameLoop(state, agent, winCount)
     if not firstWin and winCount == 1:
         timeToFirstWin = time.perf_counter() - initialTime
         firstWin = True
 
     # Save Q Values 
-    agent.writeQValues(agent.q)
+    # l = []
+    # for state in agent.q:
+    #      l.append(agent.q[state])
+    # print("hi", l)
+
+    agent.writeQValues(str(agent.q))
 
 finalTime = time.perf_counter() - initialTime
 print("Total Execution Time: %d seconds" % (finalTime))
