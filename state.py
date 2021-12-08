@@ -150,6 +150,10 @@ class State(object):
             return True
 
     def checkBoard(self, data, action):
+        if action == None:
+            print("out of moves")
+            return "deadlock"
+        
         (box, move) = action
         drow, dcol = move
         boxRow, boxCol = box 
@@ -157,6 +161,7 @@ class State(object):
         agentPosition = boxRow - drow, boxCol - dcol 
 
         if (newBoxX, newBoxY) not in self.safeSquares:
+            print("1")
             return "deadlock"
 
         #print("# boxes: %s - Location of boxes:%s" % (self.numBoxes, self.boxes))
@@ -173,7 +178,7 @@ class State(object):
 
             # Since we moved a box, check for freeze deadlocks (Deadlocks where a box cannot be moved)
             if self.freezeDeadlocksWrapper(data, e_boxPosition):
-                print("hi")
+                print("freeze deadlock")
                 return "deadlock"
 
             if e_newPosition in self.storage:
@@ -190,6 +195,7 @@ class State(object):
                 #print("Is deadlock? %s" % (self.isDeadlock(e_newPosition, e_boxPosition)))
                 #print("Is a deadlock position?")
                 if self.isDeadlock(e_newPosition, e_boxPosition):
+                    print("2")
                     return "deadlock"
             else:
                 ## The next position is not a valid storage then the agent just move the box
@@ -203,6 +209,7 @@ class State(object):
         # Check for simple deadlocks
         for box in self.boxes:
             if box not in self.safeSquares:
+                print("3")
                 return "deadlock"
 
         # Check for win condition
@@ -243,20 +250,18 @@ class State(object):
                 return False
 
     def __repr__(self):
-        return str(sorted(self.boxes))
+        return str(tuple(sorted(self.boxes)))
 
     # Need hash and eq functions to let us use State as a key in dictionaries
     def __hash__(self):
-        boxes = sorted(self.boxes)
-        return hash(tuple(boxes))
+        boxes = tuple(sorted(self.boxes))
+        return hash(boxes)
 
     def __eq__(self, other):
         if not isinstance(other, State): 
             return False
         boxes = sorted(self.boxes)
         otherBoxes = sorted(other.boxes)
-        return str(boxes) == str(otherBoxes)
+        return tuple(boxes) == tuple(otherBoxes)
 
-    #def __repr__(self):
-    #    return "<Agent row:%s col:%s q:%s>" % (self.row, self.col, self.q)
 

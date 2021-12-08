@@ -53,11 +53,14 @@ def timerFired(data):
 
         # Move happens every second
         
-        if data.time % 10 == 0:
+        if data.time % 1 == 0:
 
             # Get Action from epsilon greedy policy
             #action = data.agent.agentMove(data.state)
-            action = data.agent.agentMoveMacro(data.state, data.board)
+            action = data.agent.agentMoveMacro(data.state, data.board, data)
+            print("before", data.agent.history)
+            if action == None: 
+                data.isGameOver = True
 
             # Check for outcome 
             update = data.state.checkBoard(data, action) 
@@ -67,11 +70,11 @@ def timerFired(data):
             #print("EXPECTED OUTCOME: %s" % (update))
 
             # Wait for 2 seconds
-            time.sleep(3)
+            #time.sleep(5)
 
             # Move Agent
             data.agent.movePlayer(data, data.state, action)
-
+            print("after", data.agent.history)
             # Update q values
             data.agent.qValueUpdate(update, action, data.state)
 

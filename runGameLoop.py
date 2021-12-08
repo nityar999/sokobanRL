@@ -5,7 +5,7 @@ import gameNoAnimation
 from state import *
 from agent import *
 
-total = 1
+total = 5
 epsilon = 0.2
 gamma = 0.9
 alpha = 0.5
@@ -15,15 +15,15 @@ timeToFirstWin = 0
 winCount = 0
 initialTime = time.perf_counter()
 
+# Setup Agent - Load Q Values, clear history
+state = State("sokoban01.txt")
+agent = Agent(state.playerRow, state.playerCol, state, epsilon, gamma, alpha)
+
 # Initialize Q Values
-with open("qvalues.json", "wt") as f:
-    json.dump({}, f)
+# with open("qvalues.json", "wt") as f:
+#     json.dump({}, f)
 
 for i in range(total):
-
-    # Setup Agent - Load Q Values, clear history
-    state = State("sokoban01.txt")
-    agent = Agent(state.playerRow, state.playerCol, state, epsilon, gamma, alpha)
 
     # Decay epsilon value
     #epsilon = epsilon - (0.1*epsilon)
@@ -37,12 +37,6 @@ for i in range(total):
     if not firstWin and winCount == 1:
         timeToFirstWin = time.perf_counter() - initialTime
         firstWin = True
-
-    # Save Q Values 
-    # l = []
-    # for state in agent.q:
-    #      l.append(agent.q[state])
-    # print("hi", l)
 
     agent.writeQValues(str(agent.q))
 
