@@ -39,8 +39,8 @@ def keyPressed(event, data):
     if event.keysym == "space":
         init(data)
 
-    if event.keysym in ["Up", "Down", "Left", "Right"]:
-        data.agent.movePlayer(data, data.state, actionDict(event.keysym))
+    #if event.keysym in ["Up", "Down", "Left", "Right"]:
+    #    data.agent.movePlayer(data, data.state, actionDict(event.keysym))
 
     # Check for game over condition after every action
     data.isGameOver = data.state.isGameOver(data)
@@ -53,10 +53,11 @@ def timerFired(data):
 
         # Move happens every second
         
-        if data.time % 1 == 0:
+        if data.time % 10 == 0:
 
             # Get Action from epsilon greedy policy
-            action = data.agent.agentMove(data.state)
+            #action = data.agent.agentMove(data.state)
+            action = data.agent.agentMoveMacro(data.state, data.board)
 
             # Check for outcome 
             update = data.state.checkBoard(data, action) 
@@ -66,13 +67,13 @@ def timerFired(data):
             #print("EXPECTED OUTCOME: %s" % (update))
 
             # Wait for 2 seconds
-            #time.sleep(5)
+            time.sleep(3)
 
             # Move Agent
-            #data.agent.movePlayer(data, data.state, action)
+            data.agent.movePlayer(data, data.state, action)
 
             # Update q values
-            data.agent.qValueUpdate(update)
+            data.agent.qValueUpdate(update, action, data.state)
 
             if update == "win":
                 data.winCount += 1
@@ -88,8 +89,8 @@ def timerFired(data):
 
         # List of moves til end of time
         moves = []
-        for (state, action) in data.agent.history:
-            moves.append(action)
+        for (state, path, action) in data.agent.history:
+            moves.append(path)
             
         data.root.destroy()
 

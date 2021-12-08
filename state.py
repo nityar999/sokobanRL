@@ -1,7 +1,7 @@
 import readInput
 
 def isInBounds(row, col, rows, cols):
-        if row > 0 and row < rows - 1 and col > 0 and col < cols - 1:
+        if row >= 0 and row < rows - 1 and col >= 0 and col < cols - 1:
             return True
         return False
 
@@ -150,17 +150,25 @@ class State(object):
             return True
 
     def checkBoard(self, data, action):
+        (box, move) = action
+        drow, dcol = move
+        boxRow, boxCol = box 
+        newBoxX, newBoxY = boxRow + drow, boxCol + dcol 
+        agentPosition = boxRow - drow, boxCol - dcol 
+
+        if (newBoxX, newBoxY) not in self.safeSquares:
+            return "deadlock"
 
         #print("# boxes: %s - Location of boxes:%s" % (self.numBoxes, self.boxes))
         #print("# storages: %s - Location of storages:%s" % (self.numStorage, self.storage))
 
-        e_newPosition = (data.agent.row + action[0], data.agent.col + action[1])
+        e_newPosition = boxRow, boxCol # (data.agent.row + action[0], data.agent.col + action[1])
         # Check if there is a box in the position the agent want to move
         if e_newPosition in self.boxes:
 
             #print('There is a BOX that the agent tries to move')
             ## Expected new position for the box
-            e_boxPosition = (e_newPosition[0] + action[0], e_newPosition[1] + action[1])
+            e_boxPosition = newBoxX, newBoxY #(e_newPosition[0] + action[0], e_newPosition[1] + action[1])
             #print("Expected new position of the box: (%s, %s)" % (e_boxPosition[0], e_boxPosition[1]))
 
             # Since we moved a box, check for freeze deadlocks (Deadlocks where a box cannot be moved)
@@ -234,7 +242,7 @@ class State(object):
             else:
                 return False
 
-    def __str__(self):
+    def __repr__(self):
         return str(sorted(self.boxes))
 
     # Need hash and eq functions to let us use State as a key in dictionaries
@@ -245,7 +253,9 @@ class State(object):
     def __eq__(self, other):
         if not isinstance(other, State): 
             return False
-        return str(self.board) == str(other.board)
+        boxes = sorted(self.boxes)
+        otherBoxes = sorted(other.boxes)
+        return str(boxes) == str(otherBoxes)
 
     #def __repr__(self):
     #    return "<Agent row:%s col:%s q:%s>" % (self.row, self.col, self.q)

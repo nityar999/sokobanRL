@@ -22,7 +22,7 @@ with open("qvalues.json", "wt") as f:
 for i in range(total):
 
     # Setup Agent - Load Q Values, clear history
-    state = State("sokoban00.txt")
+    state = State("sokoban01.txt")
     agent = Agent(state.playerRow, state.playerCol, state, epsilon, gamma, alpha)
 
     # Decay epsilon value
