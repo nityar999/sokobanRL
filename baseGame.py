@@ -52,13 +52,12 @@ def timerFired(data):
     if not data.isGameOver:
 
         # Move happens every second
-        
         if data.time % 1 == 0:
 
             # Get Action from epsilon greedy policy
             #action = data.agent.agentMove(data.state)
             action = data.agent.agentMoveMacro(data.state, data.board, data)
-            print("before", data.agent.history)
+
             if action == None: 
                 data.isGameOver = True
 
@@ -66,17 +65,18 @@ def timerFired(data):
             update = data.state.checkBoard(data, action) 
 
             #print("ACTION: (%s, %s)" % (action[0], action[1]))
+            #print(action, data.agent.history)
 
             #print("EXPECTED OUTCOME: %s" % (update))
 
             # Wait for 2 seconds
             #time.sleep(5)
 
-            # Move Agent
-            data.agent.movePlayer(data, data.state, action)
-            print("after", data.agent.history)
             # Update q values
             data.agent.qValueUpdate(update, action, data.state)
+
+            # Move Agent
+            data.agent.movePlayer(data, data.state, action)
 
             if update == "win":
                 data.winCount += 1

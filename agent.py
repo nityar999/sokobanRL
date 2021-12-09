@@ -1,6 +1,7 @@
 import random 
 import json
 import math 
+import copy
 
 def isInBounds(data, row, col):
     if row >= 0 and row < data.state.rows - 1 and col >= 0 and col < data.state.cols - 1:
@@ -34,10 +35,9 @@ class Node(object):
 
 class Agent(object):
 
-    def __init__(self, row, col, state, epsilon=0.1, gamma=0.9, learning=0.5):
+    def __init__(self, row, col, epsilon=0.1, gamma=0.9, learning=0.5):
         self.row = row 
         self.col = col
-        self.state = state
 
         # What should these values be 
         self.epsilon = epsilon     # Fraction of the time agents acts randomly
@@ -251,11 +251,13 @@ class Agent(object):
 
         # Update history: box locations, agent location, action takes
         # print("history append",state, action)
-        self.history.append((state, (self.row, self.col), action))
+        stateCopy = copy.deepcopy(state)
+        self.history.append((stateCopy, (self.row, self.col), action))
         return action 
 
 
     def movePlayer(self, data, state, action):
+        #print("before", self.history)
         if action == None:
             return 
         (box, move) = action 
@@ -275,20 +277,25 @@ class Agent(object):
             if boxPosition in data.state.boxes:
                 return
             # Move box and player if both are in bounds
+            print("b", self.history)
             if isInBounds(data, boxPosition[0], boxPosition[1]) and data.board[boxPosition[0]][boxPosition[1]] in [0, '.']:
                 data.state.boxes.remove(newPosition)
                 data.state.boxes.append(boxPosition)
+                print("a", self.history)
                 (self.row, self.col) = newPosition
                 data.state.playerRow, data.state.playerCol = newPosition
                 data.board = data.state.createBoard()
-                self.state = data.state
+
+        #if True:
+            #print("between", self.history)
             
         # No adjacent box, move player only
         elif isInBounds(data, newPosition[0], newPosition[1]) and data.board[newPosition[0]][newPosition[1]] in [0, '.']:
             (self.row, self.col) = newPosition
             data.state.playerRow, data.state.playerCol = newPosition
             data.board = data.state.createBoard()
-            self.state = data.state
+
+        #print("after", self.history)
 
     def qValueUpdate(self, update, action, state):
         #print("update before", self.q)

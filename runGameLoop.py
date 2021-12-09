@@ -17,7 +17,7 @@ initialTime = time.perf_counter()
 
 # Setup Agent - Load Q Values, clear history
 state = State("sokoban01.txt")
-agent = Agent(state.playerRow, state.playerCol, state, epsilon, gamma, alpha)
+agent = Agent(state.playerRow, state.playerCol, epsilon, gamma, alpha)
 
 # Initialize Q Values
 # with open("qvalues.json", "wt") as f:
@@ -38,7 +38,8 @@ for i in range(total):
         timeToFirstWin = time.perf_counter() - initialTime
         firstWin = True
 
-    agent.writeQValues(str(agent.q))
+    agent.history = []
+    #agent.writeQValues(str(agent.q))
 
 finalTime = time.perf_counter() - initialTime
 print("Total Execution Time: %d seconds" % (finalTime))
