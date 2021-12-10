@@ -13,7 +13,9 @@
 \usepackage{xcolor}         % colors
 \usepackage{enumitem}
 \usepackage{fancyhdr}
-\usepackage{algorithmicx, algpseudocode, algorithm, float}
+% \usepackage{algorithmicx, algpseudocode, algorithm, float}
+\usepackage{algorithmicx, algorithm, float}
+\usepackage[noend]{algpseudocode}
 \usepackage{graphicx}
 \graphicspath{ {images/} }
 \usepackage{wrapfig}
@@ -35,7 +37,7 @@
 %\usepackage{amsmath}
 %\usepackage[legalpaper, margin=1in]{geometry}
 
-\title{CS271 Project Draft Design: Sokoban}
+\title{CS271 Project Final Draft: Sokoban}
 
 \author{
   Nitya Raju\\
@@ -69,11 +71,14 @@
 %  must be limited to one paragraph.
 %\end{abstract}
 
+\section{Abstract}
+Sokoban is a challenging puzzle for both humans and AIs. Researchers have invested in implementing and improving multiple Reinforcement Learning algorithms - ranging from Monte Carlo Tree Search to Q-Learning - to make Sokoban reach goals faster as the boards get more complex. In our paper, we implement a Q-Learning algorithm that goes beyond the conventional decision of inheriting the entire board as the state space, and instead explores the possibility of reducing it just the exact box locations. We then re-define our Q-value update approach to be driven by the box locations as against the entire Sokoban environment. The reduced branching factor and run-time are an acceptable trade-off to the more convoluted state structure. When compared to other Q-Learning variations, such as Deep Q-Learning, that we also tried, this emphasis on re-examining our reinforcement learning environment itself rendered much better results with respect to game success and efficiency. 
+
 \section{Introduction}
 
 Sokoban is a part puzzle, part video game in which a player (Sokoban) pushes around boxes such that they end up in storage locations which are pre-determined by a game level. Sokoban runs into walls and other boxes along the way and whether or not it can navigate its way around such roadblocks is what forms the crux of this game. 
 
-We have developed an AI agent for Sokoban. Our project aims to develop a reasonably intelligent AI Sokoban that can handle multiple configurations of walls, boxes, and storages, all with varying complexities. To make this happen, we called on to the Q-Learning algorithm from within the larger umbrella of Reinforcement Learning and Markov Decision Processes. Besides that, we invested in identifying some efficient approaches to identifying as many deadlock scenarios as possible, if not all. 
+We have developed an AI agent for Sokoban. Our project aims to develop a reasonably intelligent AI Sokoban that can handle multiple configurations of walls, boxes, and storages, all with varying complexities. We called on to the Q-Learning algorithm from within the larger umbrella of Reinforcement Learning and Markov Decision Processes to perform this taks (see \textbf{Q-Learning Algorithm}. Besides that, we invested in identifying some efficient approaches to identifying as many deadlock scenarios as possible, if not all (see \textbf{Freeze Deadlock Detection}). And finally, we constructed some macro moves the re-defined the state space to be limited to the box locations, thereby reducing our state space and branching factor exponentially (see \textbf{Macro Moves}). 
 
 % \section{Reinforcement Learning and Q- Learning}
 % \textbf{What is Reinforcement Learning?}: \\
@@ -147,10 +152,14 @@ The Agent class focused on the actions Sokoban would take given the rules of the
   \State $actions$ : Basic actions: LEFT, RIGHT, UP, DOWN
   \State $history$ : Record of state and action taken from that state
   \State $q$ : Q values \\
-  
+  \State $paths$ : visited paths \\
+
   \State def $agentMove(self, state)$
   \State def $movePlayer(self, data, state, action)$
   \State def $qValueUpdate(self, update)$
+  \State def $possiblemoves(self, state, box locations)$
+  \State def $reachablesBoxes(self, board, agent location, goal)$
+  
 \EndStruct
 \end{algorithmic}
 \label{Class}
@@ -162,6 +171,7 @@ We described 3 principal methods in this class:
     \item \underline{AgentMove}: This function returns the action Sokoban takes using an $\epsilon$-greedy policy. This means Sokoban takes a random action with probability $\epsilon$ (initialized to $0.1$) and acts according to the policy it learns the remaining time. The pseudo-code for the same is described in detail in the next section.
     \item \underline{MovePlayer}: This function implement Sokoban's move given the rules of the game. It looks into the surrounding region once the agent takes an action and informs the game of any boxes Sokoban moved, or any obstacles (walls, deadlocks, bounds) that it confronted along the way. 
     \item \underline{qValueUpate}: This function updates the current q-value by loyally following the Q-Learning algorithm formula. The pseudo-code for this function is also detailed out in the next section. 
+    \item \underline{reachableBoxes and possibleMoves}: These two functions our part of macro moves focus, wherein we redefine the state space to be limited to boxes and also redefine q-values as dictionaries of dictionaries guided by possible actions given a box location. The pseudo code of these algorithms are in the section Macro Moves. 
 \end{enumerate}
 
 \subsection{State}
@@ -192,6 +202,7 @@ The state class plays the important role of deciding the fate of Sokoban given t
   \State def $checkBoard(self, data, action)$
   \State def $isGameOver(self, data, update)$
   \State def $isDeadlock(self, pos, obs))$
+  \State def $freezeDeadlockDetection(self, state, box positions, blocked positions, previously evaluated positions, axes))$
 \EndStruct
 \end{algorithmic}
 \label{Class}
@@ -382,7 +393,7 @@ This function essentially flips the Sokoban game over. We start by placing the b
     \EndFor
     \end{algorithmic}
 \end{algorithm}
-\newpage
+% \newpage
 %\textbf{if}
 %1) \emph{newLocation} within the bounds of the game level, AND
 %2) \emph{newLocation} is not a wall, AND 
@@ -392,33 +403,215 @@ This function essentially flips the Sokoban game over. We start by placing the b
 
 This function detects if there are obstacles around the box that do not allow it to move, either walls or another boxes.
 
-\begin{algorithm}
-    \caption{\textsc{isDeadlock}: Freeze Deadlock Detection}\label{euclid}
-    \hspace*{\algorithmicindent} \textbf{Input}: expected position of the agent \emph{posA} \\
-    \hspace*{\algorithmicindent} \textbf{Output}: expected position of the obstacle \emph{posO} \\
-    \begin{algorithmic}
-    \State $posA \gets$ expected position of the agent
-    \State $posO \gets$ expected position of the obstacle \\
-    \If{the expected position of obstacle is above \textbf{or} below the expected position of the agent (Vertical Analysis)} 
-        \If{the square on the left the agent contain either boxes \textbf{or} walls}
-            \State return True
-        \ElsIf{the square on the right the agent contain either boxes \textbf{or} walls}
-            \State return True
-        \Else
-            \State return False
-        \EndIf
+% \begin{algorithm}
+%     \caption{\textsc{isDeadlock}: Freeze Deadlock Detection}\label{euclid}
+%     \hspace*{\algorithmicindent} \textbf{Input}: expected position of the agent \emph{posA} \\
+%     \hspace*{\algorithmicindent} \textbf{Output}: expected position of the obstacle \emph{posO} \\
+%     \begin{algorithmic}
+%     \State $posA \gets$ expected position of the agent
+%     \State $posO \gets$ expected position of the obstacle \\
+%     \If{the expected position of obstacle is above \textbf{or} below the expected position of the agent (Vertical Analysis)} 
+%         \If{the square on the left the agent contain either boxes \textbf{or} walls}
+%             \State return True
+%         \ElsIf{the square on the right the agent contain either boxes \textbf{or} walls}
+%             \State return True
+%         \Else
+%             \State return False
+%         \EndIf
 
-    \ElseIf{ the expected position of obstacle is to the left or right of the expected position of the agent (Horizontal Analysis)}
-        \If{the square immediately above the agent contains either boxes \textbf{or} walls}
-            \State return True
-        \ElsIf{the square immediately below the agent contains either boxes \textbf{or} walls}
-            \State return True
-        \Else
-            \State return False
+%     \ElsIf {the expected position of obstacle is to the left or right of the expected position of the agent (Horizontal Analysis)}
+%         \If{the square immediately above the agent contains either boxes \textbf{or} walls}
+%             \State return True
+%         \ElsIf{the square immediately below the agent contains either boxes \textbf{or} walls}
+%             \State return True
+%         \Else
+%             \State return False
+%         \EndIf
+%     \EndIf 
+%     \end{algorithmic}
+% \end{algorithm}
+
+\begin{algorithm}
+    \caption{\textsc{freezeDeadlockCheck}: Freeze Deadlock Detection}\label{euclid}
+    \hspace*{\algorithmicindent} \textbf{Input}: state, box location, blocked positions, positions checked already, axes \emph{posA} \\
+    \hspace*{\algorithmicindent} \textbf{Output}: boolean indicating if its a freeze deadlock scenario \\
+    \begin{algorithmic}
+    \If {box not in \emph{boxes}}
+        \State return False
+    \EndIf
+    % \State $boxX, boxY \gets$ box coordinates
+    \State $directions \gets$ dictionary of vertical and horizontal direction coordinates
+    % \If {box is not \emph{blocked}}
+    %     \State $blocked[box] \gets$ { "horizontal": False, "vertical": False}
+    % \EndIf
+    
+    % \If {box is not \emph{blocked}}
+    %     \State $checked[box] \gets$ { "horizontal": False, "vertical": False}
+    % \EndIf
+    
+    % \If {axes is not empty}
+    %     \State $axes \gets$ ["horizontal", "vertical"]
+    % \EndIf
+    
+    % \If {axis is in ["horizontal", "vertical"]}
+    %     \If {axis not in axes}
+    %         \State delete blocked[box][axis]
+    %     \EndIf
+    % \EndIf
+    
+    \State $axes \gets$ horizontal and vertical axis
+    
+    \For {axis in axes} 
+        \If {axis already checked} 
+            \State $continue$
         \EndIf
-    \EndIf 
+        
+        \State $dir1, dir2, dir3, dir4 \gets$ all axis directions
+        \State $side1X, side1Y \gets$ box coordinates if pushed left/up in the horizontal/vertical axis
+        \State $side2X, side2Y \gets$ box coordinates if pushed right/down in the horizontal/vertical axis
+        
+        \If {(side1X, side1Y) or (side2X, side2Y) either in \emph{walls} or not in \emph{safeSquares}}
+            \State blocked[box][axis] = True (mark box axis as blocked )
+        \EndIf
+        
+        \State  $checked[box][axis] \gets$ true (mark box axis as checked) 
+        \State (recursively check for blocked boxes on either side that are not already checked)
+        
+        % (Check if thhe next box is blocked, and if so check recursively all the way through)
+        \If {(side1X, side1Y) in \emph{boxes}}
+            \If{\emph{freezeDeadlockCheck}(data, (side1X, side1Y), blocked, checked, [otherAxis(axis)])}
+                blocked[box][axis] = True (mark box axis as blocked )
+            \ElsIf {\emph{checked}[(side1X, side1Y)][axis] is True}
+                \If {\emph{blocked}[(side1X, side1Y)][axis] is True}
+                    \State blocked[box][axis] = True
+                \EndIf
+            \EndIf
+        \EndIf
+        \State (repeat the  the above section for the other side (side2X, side2Y)
+    \EndFor
+        
+    % \If {axes is empty} (base case)
+    %     \For {box in blocked}
+    %         \For {axis in blocked[box]}
+    %             \If blocked[box][axis] is False (axis for that box is not blocked)
+    %                  \State return False
+    %             \EndIf
+    %         \EndFor
+    %     \EndFor
+        
+    % \Else % (recursive case)
+    %     \For {axis in blocked[boxes}
+    %         \If {blocked[box][axis] is False (axis for the box is not blocked)}
+    %             \State return False
+    %         \EndIf
+    %         \State return True
+    %     \EndFor
+    % \EndIf
+    
     \end{algorithmic}
 \end{algorithm}
+
+\newpage
+
+\section{Redefining State Space - Macro Moves}
+The overarching goal of macro moves is to \underline{reduce the state space}, thereby making our AI learn faster and better. Considering the entire board as a state space is implementation friendly but not particularly efficient. This is because every time Sokoban makes a move, the entire state space (that is, the board) changes. In fact, even when it's considering a move, it's looking at 4 different boards. \\
+With macro moves, we introduce a completely different state space, which is represented by the positions of the boxes. In this view, an action does not have to change the state space. Thus, there's a lot less information for Sokoban to digest. This new view also reduces our branching factor by a lot. \\
+Changing states spaces in this fashion also changes how we handle Q-value. Up until now, we have represent q-values as list of 4 numbers, 1 for each possible. Now, we first specify the box that Sokoban wants to target, which then helps it choose an action. Thus, the q-value representation now shifts to the form of dictionary of dictionaries (for boxes, and possible actions for each box). 
+
+\begin{algorithm}
+    \caption{\textsc{possibleMoves}: Proactively Identify Legal Moves}\label{euclid}
+    \hspace*{\algorithmicindent} \textbf{Input}: State, (box positions), selected box position, agent location\\
+    \hspace*{\algorithmicindent} \textbf{Output}: legal moves
+    \begin{algorithmic}
+    % \State $legalMoves \gets$ an empty list that would store all legal moves
+    % \State $row, col \gets$ coordinates of the box
+    % \State $agentX, agentY \gets$ coordinates of the agent
+    % \State $visited \gets$ visited paths from Sokoban to the box
+    
+    \For{an action in \emph{action} (up, down , left, right)}
+        \State $newRow, newCol \gets $ new box coordinates after an action is taken
+        % \State $boxRow, boxCol \gets $ coordinates of the box
+        % \State $newBoxX, newBoxY \gets $ new box coordinates after adding action coordinates
+        % \State $newAgentX, newAgentY \gets $ new agent coordinates after subtracting action coordinates
+        \If {new agent coordinates not in 1) a visited path \textbf{or} 2) walls \textbf{or} 3) boxes }
+            \State $continue$
+        \EndIf
+        % new position of the box after the action
+        \If {(newRow, newCol) \textbf{not in} walls or boxes \textbf{and within} row and column dimensions}
+            \State add action coordinates to list of legal moves
+        \EndIf
+    \EndFor
+    \end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}
+    \caption{\textsc{reachableBoxes}: boxes that can be reached starting ate current agent position}\label{euclid} 
+    \hspace*{\algorithmicindent} \textbf{Input}: board, agent location, goal \\
+    \hspace*{\algorithmicindent} \textbf{Output}: recursive call to function that finds path from agent location to goal 
+    \begin{algorithmic}
+    % \State $maze \gets$ board
+    % \State $rows,cols \gets$ count of rows and columns in the board
+    \State $visited \gets$ an empty set which will store all location reachable by Sokoban
+    \State $targetRow, targetCol \gets$ goal coordinates \\
+    \State \textbf{def} $solve$ (row, col)
+    % try to make a move 
+
+    \begin{algorithmic}
+        \If {agent has already visited a certain path} % if you hit something you've see before then stop and don't move 
+            \State return False (stops repeated evaluation of a visited path)
+        \EndIf 
+        \State add (row, col) to visited paths set% add it to a visited set 
+        \If {(row, col) is a goal} 
+            \State return True 
+        \EndIf
+        
+        % Recursive case -
+        % Take one step and see if there's a path that reaches the goal in that direction
+        % If there is a such a path, return it 
+        \For {an action in actions}
+            \If {action leads to goal}
+                
+                \State (recursively call \emph{solve} to check if the path leads to goal - one step at a time)
+                %if solve = true means if there is a solution in the path
+                \If {\emph{solve} (row + action[0), col + action[1])}
+                    \State return True
+                \EndIf
+            \EndIf
+        \EndFor
+        % no solution in this direction so remove (already checked so never going back again 
+        \State remove (row, col) from visited (no path to goal in that direction so remove from consideration)
+        
+        % \State return False (didn't find sol'n in that path)
+    \State return \emph{visited} (reachable squares from agent location) if \emph{solve}(row, col) (there is a path from the agent location to goal) else None
+    
+    \end{algorithmic}
+    % returns reachable squares from agent's location 
+    \end{algorithmic}
+\end{algorithm}
+
+\section{Results}
+\subsection{Before Freeze Deadlocks and Macro Moves}
+\begin{center}
+\vspace{-5pt}
+\footnotesize
+\begin{tabular}{|c|c|c|c|c|}
+    \hline
+    Board & Boxes & Solution Found? & Time & Branching Factor\\
+    \hline
+    -01 & 4 & Yes (267) & 1/326s & --\\
+    \hline
+    -02 & 4 & Yes (2) & 0/187s & --\\
+    \hline
+    -04 & 4 & No & 354s & --\\
+    \hline
+    -05a & 2 & Yes (34) & 0/554s & --\\
+    \hline
+    02 & 10 & No & 67s & --\\
+    \hline
+\end{tabular}
+\vspace{-5pt}
+\end{center}
+
 
 %\emph{posA} $\leftarrow$ expected position of the agent \\ 
 %\emph{posO} $\leftarrow$ expected position of the obstacle \\
@@ -435,7 +628,6 @@ This function detects if there are obstacles around the box that do not allow it
 %(elif \emph{(posA[0], pos[1]} + 1) in self.boxes or \emph{(posA[0], posA[1] + 1)} in self.walls: return True)
 
 %\textbf{else} return False
-\\
 %\textbf{elif} the expected position of obstacle is to the left or right of the expected position of the agent (Horizontal Analysis) \\
 %(if \emph{posO[0]} $\textless$ \emph{posA[0]} or \emph{posO[0]} $\textgreater$ \emph{posA[0]})
 
@@ -454,12 +646,13 @@ This function detects if there are obstacles around the box that do not allow it
 The Sokoban AI can be improved further with some the following considerations:
 \begin{enumerate}
     \item More deadlock detections: Thus far, we have accounted for Simple deadlocks (using pullback DFS strategy), and Freeze deadlocks (using the vertical/horizontal neighborhood search strategy). We can make the agent smarter by identifying more deadlock patterns. In particular, Corral deadlock algorithms would contribute to the game's efficiency.
-    \item Macro Moves: Currently our model uses movement in the cardinal directions as actions the agent can take. By defining the actions the agent can take to be macro moves (for example a move could be, move to the nearest box not on a storage location and move it in one of the four directions). This would reduce a lot of time spent in exploration as currently the agent spends a lot of time moving in the board without interacting with any boxes.
+    % \item Macro Moves: Currently our model uses movement in the cardinal directions as actions the agent can take. By defining the actions the agent can take to be macro moves (for example a move could be, move to the nearest box not on a storage location and move it in one of the four directions). This would reduce a lot of time spent in exploration as currently the agent spends a lot of time moving in the board without interacting with any boxes.
     \item Heuristics: The agent moves according to an $\epsilon$-greedy policy so it either moves randomly or according to the policy learned so far. We can use heuristics such as distance to a box and expected number of moves to move a box to a goal to improve the performance of the agent, especially in the early game when most q values are still $0$. 
     \item Deep Q-Learning: As our state (and action) space gets larger as the levels get more complicated, a tabular record of the states and actions can become more and more cumbersome and inefficient. In such scenarios, calling on to deep neural networks to help us generalize across states.
-    \item Macro moves: Currently our implementations gives the agent four possible moves from every location on the board - Up, Down, Left, Right. We can reduce the time the agent spends exploring the board by grouping simple moves into macro moves - for example by defining one move to be move to the nearest box and push it one step. 
-    \item Heuristics: We can further inform our agents decisions by using heuristics to guide it's behaviour. For example, we could use distance to boxes that are not on storage locations, expected number of moves to move a box to a storage location to reduce the time the agent spends moving without interacting with any boxes. 
+    % \item Macro moves: Currently our implementations gives the agent four possible moves from every location on the board - Up, Down, Left, Right. We can reduce the time the agent spends exploring the board by grouping simple moves into macro moves - for example by defining one move to be move to the nearest box and push it one step. 
+    % \item Heuristics: We can further inform our agents decisions by using heuristics to guide it's behaviour. For example, we could use distance to boxes that are not on storage locations, expected number of moves to move a box to a storage location to reduce the time the agent spends moving without interacting with any boxes. 
     \item Identifying special cases: Although including a special instance can be very risky in case it fails on higher levels, if we can confidently deduce some universal scenarios and account for them then that might make our algorithm a lot smarter. Nonetheless, we have chosen to not include any such cases as of now so as to push most of our improvements through Q-Learning. 
+    \item Further redefine state space: We can consider including agent locations to the state space along with the box locations as well (state space = number of boxes + 1). Additionally, we can look into other state space representations as well (which aren't the whole board)   
 \end{enumerate}
 
 %\section{Random - DELETE LATER}
