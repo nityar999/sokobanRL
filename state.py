@@ -33,7 +33,7 @@ class State(object):
             board[row][col] = "$"
         for (row, col) in self.storage:
             board[row][col] = "."
-        board[self.playerRow][self.playerCol] = "@"
+        board[self.playerCol][self.playerRow] = "@"
         return board    
 
     # General algorithm for simple deadlock detection is:
@@ -150,20 +150,21 @@ class State(object):
             return True
 
     def checkBoard(self, data, action):
+
         if action == None:
-            print("out of moves")
-            return "deadlock"
+            return
         
         (box, move) = action
         drow, dcol = move
         boxRow, boxCol = box 
         newBoxX, newBoxY = boxRow + drow, boxCol + dcol 
-        agentPosition = boxRow - drow, boxCol - dcol 
 
-        if (newBoxX, newBoxY) not in self.safeSquares:
-            print("1")
-            return "deadlock"
-
+        # Check for simple deadlocks
+        for box in self.boxes:
+            if box not in self.safeSquares:
+                print("3")
+                return "deadlock"
+                
         #print("# boxes: %s - Location of boxes:%s" % (self.numBoxes, self.boxes))
         #print("# storages: %s - Location of storages:%s" % (self.numStorage, self.storage))
 
@@ -205,12 +206,6 @@ class State(object):
         # Check for timeout after 3 minutes
         if data.time >= 1200:
             return "timeout"
-
-        # Check for simple deadlocks
-        for box in self.boxes:
-            if box not in self.safeSquares:
-                print("3")
-                return "deadlock"
 
         # Check for win condition
         for box in self.boxes:

@@ -52,7 +52,7 @@ def timerFired(data):
     if not data.isGameOver:
 
         # Move happens every second
-        if data.time % 1 == 0:
+        if data.time % 10 == 0:
 
             # Get Action from epsilon greedy policy
             #action = data.agent.agentMove(data.state)
@@ -84,6 +84,13 @@ def timerFired(data):
 
             # Check for game over condition 
             data.isGameOver = data.state.isGameOver(update)
+
+            winFlag = True
+            for box in data.state.boxes:
+                if box not in data.state.storage:
+                    winFlag = False
+            if winFlag: data.isGameOver 
+
             if data.isGameOver: 
                 print(update)
     else:

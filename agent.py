@@ -104,12 +104,10 @@ class Agent(object):
 
     def possibleMoves(self, state, box, agentLocation):
         legalMoves = []
-        row, col = box
         agentX, agentY = agentLocation
         visited = self.paths[(box, agentLocation)]
 
         for (drow, dcol) in self.actions:
-            newRow, newCol = row + drow, col + dcol
             
             boxRow, boxCol = box 
             newBoxX, newBoxY = boxRow + drow, boxCol + dcol 
@@ -121,8 +119,9 @@ class Agent(object):
             if (newAgentX, newAgentY) in state.boxes or (newAgentX, newAgentY) in state.walls:
                 continue
 
-            if (((newRow, newCol) not in state.boxes and (newRow, newCol) not in state.walls and 
-                newRow >= 0 and newRow < state.rows - 1 and newCol >= 0 and newCol < state.cols - 1)):
+            if (((newBoxX, newBoxY) not in state.boxes and (newBoxX, newBoxY) not in state.walls and 
+                newBoxX >= 0 and newBoxX <= state.cols - 1 and newBoxY >= 0 and newBoxY <= state.rows - 1 and 
+                newAgentX >= 0 and newAgentX <= state.cols - 1 and newAgentY >= 0 and newAgentY <= state.rows - 1)):
                 legalMoves.append((drow, dcol))
 
         return legalMoves
@@ -137,7 +136,7 @@ class Agent(object):
         if (newRow, newCol) in state.walls:
             return False
 
-        if (newRow < 0 or newRow > state.rows - 1 or newCol < 0 or newCol > state.cols - 1):
+        if (newRow < 0 or newRow > state.cols - 1 or newCol < 0 or newCol > state.rows - 1):
             return False
 
         if (newRow, newCol) in state.boxes:
@@ -194,7 +193,6 @@ class Agent(object):
         
         # With probability epsilon, make move randomly 
         if probability < self.epsilon:
-
             # Initialize state for all boxes and actions
             if state not in self.q:
                 self.q[state] = dict()
@@ -250,25 +248,25 @@ class Agent(object):
                 action = (box, move)
 
         # Update history: box locations, agent location, action takes
-        # print("history append",state, action)
         stateCopy = copy.deepcopy(state)
         self.history.append((stateCopy, (self.row, self.col), action))
         return action 
 
 
     def movePlayer(self, data, state, action):
-        #print("before", self.history)
+
         if action == None:
             return 
         (box, move) = action 
         drow, dcol = move 
         boxX, boxY = box 
 
-        self.row = boxX - drow
-        self.col = boxY - dcol 
+        # self.row = boxX - drow
+        # self.col = boxY - dcol 
 
         # Calculate new indices of the player and any adjacent box
-        newPosition = (self.row + drow, self.col + dcol)
+        #newPosition = (self.row + drow, self.col + dcol)
+        newPosition = boxX, boxY
         boxPosition = (newPosition[0] + drow, newPosition[1] + dcol)
 
         #  Check if we're moving in the direction of an adjacent box
@@ -277,17 +275,12 @@ class Agent(object):
             if boxPosition in data.state.boxes:
                 return
             # Move box and player if both are in bounds
-            print("b", self.history)
             if isInBounds(data, boxPosition[0], boxPosition[1]) and data.board[boxPosition[0]][boxPosition[1]] in [0, '.']:
                 data.state.boxes.remove(newPosition)
                 data.state.boxes.append(boxPosition)
-                print("a", self.history)
                 (self.row, self.col) = newPosition
                 data.state.playerRow, data.state.playerCol = newPosition
                 data.board = data.state.createBoard()
-
-        #if True:
-            #print("between", self.history)
             
         # No adjacent box, move player only
         elif isInBounds(data, newPosition[0], newPosition[1]) and data.board[newPosition[0]][newPosition[1]] in [0, '.']:
@@ -295,20 +288,13 @@ class Agent(object):
             data.state.playerRow, data.state.playerCol = newPosition
             data.board = data.state.createBoard()
 
-        #print("after", self.history)
-
     def qValueUpdate(self, update, action, state):
-        #print("update before", self.q)
+        print(self.q)
+
         if len(self.history) < 2:
             return
         s1, a1, s0, a0 = self.history[-1][0], self.history[-1][2], self.history[-2][0], self.history[-2][2]
 
-        print("h", self.history)
-        # print("s0", s0)
-        # print("a0", a0)
-        # print("s1", s1)
-        # print("a1", a1)
-        # print("q", self.q)
         # Compute rewards for the action
         if update == "deadlock": 
             reward = - 100
