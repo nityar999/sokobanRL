@@ -74,11 +74,16 @@
 \section{Abstract}
 Sokoban is a challenging puzzle for both humans and AIs. Researchers have invested in implementing and improving multiple Reinforcement Learning algorithms - ranging from Monte Carlo Tree Search to Q-Learning - to make Sokoban reach goals faster as the boards get more complex. In our paper, we implement a Q-Learning algorithm that goes beyond the conventional decision of inheriting the entire board as the state space, and instead explores the possibility of reducing it just the exact box locations. We then re-define our Q-value update approach to be driven by the box locations as against the entire Sokoban environment. The reduced branching factor and run-time are an acceptable trade-off to the more convoluted state structure. When compared to other Q-Learning variations, such as Deep Q-Learning, that we also tried, this emphasis on re-examining our reinforcement learning environment itself rendered much better results with respect to game success and efficiency. 
 
+% space complexity - we are carrying board representation throughout - constrained by size of the board (rows, cols)
+% q values - worst case: exponential in the number of boxes ex. for 3 boxes, q value depends on how many positions those boxes can take
+
+% time complexity: depends on branching factor, which went down - so time much better than what we had with elementary 
+
 \section{Introduction}
 
 Sokoban is a part puzzle, part video game in which a player (Sokoban) pushes around boxes such that they end up in storage locations which are pre-determined by a game level. Sokoban runs into walls and other boxes along the way and whether or not it can navigate its way around such roadblocks is what forms the crux of this game. 
 
-We have developed an AI agent for Sokoban. Our project aims to develop a reasonably intelligent AI Sokoban that can handle multiple configurations of walls, boxes, and storages, all with varying complexities. We called on to the Q-Learning algorithm from within the larger umbrella of Reinforcement Learning and Markov Decision Processes to perform this taks (see \textbf{Q-Learning Algorithm}. Besides that, we invested in identifying some efficient approaches to identifying as many deadlock scenarios as possible, if not all (see \textbf{Freeze Deadlock Detection}). And finally, we constructed some macro moves the re-defined the state space to be limited to the box locations, thereby reducing our state space and branching factor exponentially (see \textbf{Macro Moves}). 
+We have developed an AI agent for Sokoban. Our project aims to develop a reasonably intelligent AI Sokoban that can handle multiple configurations of walls, boxes, and storages, all with varying complexities. We called on to the Q-Learning algorithm from within the larger umbrella of Reinforcement Learning and Markov Decision Processes to perform this taks (see \textbf{Q-Learning Algorithm}. Besides that, we invested in identifying some efficient approaches to identifying as many deadlock scenarios as possible, if not all (see \textbf{Freeze Deadlock Detection}). And finally, we constructed some macro moves the re-defined the state space to be limited to the box locations, thereby reducing our state space and branching factor exponentially (see \textbf{Macro Moves}). \underline{The space complexity of our algorithm is now exponential in the number of boxes} as against exponential in the board size. \underline{And the time complexity}, which is dependent on the branching factor, \underline{reduced because of the branching factor itself.} And finally, our \underline{q-values, even in their worst case, are now just exponential in the number of boxes.}
 
 % \section{Reinforcement Learning and Q- Learning}
 % \textbf{What is Reinforcement Learning?}: \\
@@ -590,28 +595,57 @@ Changing states spaces in this fashion also changes how we handle Q-value. Up un
 \end{algorithm}
 
 \section{Results}
+The below results for Sokoban that gets 5000 iterations to get to a solution. It can win multiple times in those iterations, but we only look into the first win, and the time it took to get there. 
+
 \subsection{Before Freeze Deadlocks and Macro Moves}
 \begin{center}
 \vspace{-5pt}
 \footnotesize
 \begin{tabular}{|c|c|c|c|c|}
     \hline
-    Board & Boxes & Solution Found? & Time & Branching Factor\\
+    Board & Boxes & Solution Found? & Time to Win\\
     \hline
-    -01 & 4 & Yes (267) & 1/326s & --\\
+    Sokoban-01 & 4 & Yes & 1s\\
     \hline
-    -02 & 4 & Yes (2) & 0/187s & --\\
+    Sokoban-02 & 4 & Yes & 0s\\
     \hline
-    -04 & 4 & No & 354s & --\\
+    Sokoban-04 & 4 & No & 354s \\
     \hline
-    -05a & 2 & Yes (34) & 0/554s & --\\
+    Sokoban-05a & 2 & Yes & 5s\\
     \hline
-    02 & 10 & No & 67s & --\\
+    Sokoban-02 & Yes & 34s\\
     \hline
 \end{tabular}
 \vspace{-5pt}
 \end{center}
 
+\subsection{After Freeze Deadlocks and Macro Moves}
+\begin{center}
+\vspace{-5pt}
+\footnotesize
+\begin{tabular}{|c|c|c|c|c|}
+    \hline
+    Board & Boxes & Solution Found? & Time to Win\\
+    \hline
+    Sokoban-01 & 4 & Yes & 1s\\
+    \hline
+    Sokoban-02 & 4 & Yes & 0s\\
+    \hline
+    Sokoban-04 & 4 & No & 10s \\
+    \hline
+    Sokoban-05a & 2 & Yes & 5s\\
+    \hline
+    Sokoban-02 & Yes & No & 34s\\
+    \hline
+\end{tabular}
+\vspace{-5pt}
+\end{center}
+
+As you can see, getting to the first win post macro moves is a lot quicker. For larger boards and with better heuristics the reduction in time would be a lot more stark. 
+
+\subsection{Why did our Benchmarks Not Work}
+
+We believe we are in the right direction with our approach and methodology but we would like to acknowledge that there are some areas that we certainly needed to fix. One such major point of improvement is the \underline{asynchronous behavior of our macro moves}. Our agent has to do a lot of things - choose an action, check the board for deadlocks, wins, move the agent, and so on. A consequential issue we are running into is that sometimes these things happen asynchronously - that is, sometimes an illegal move still updates q-values resulting in more illegal actions. To debug this, we would need to identify the source of this issue such that we instruct the code to follow the 4 steps in the exact order we want them to. From what it looks like as if now, it could be reconstructing some of our code. But we are confident that most of our individual functions, including those for the macro moves, are mostly correct. Many other points of improvements are fleshed out in greater in the Future Considerations section. 
 
 %\emph{posA} $\leftarrow$ expected position of the agent \\ 
 %\emph{posO} $\leftarrow$ expected position of the obstacle \\
@@ -640,19 +674,19 @@ Changing states spaces in this fashion also changes how we handle Q-value. Up un
 %(if \emph{(posA[0] + 1, posA[1])} in self.boxes or \emph{(posA[0] + 1, posA[1])} in self.walls: return True)
 
 %\textbf{else} return False
-\newpage
+% \newpage
 
 \section{Future Considerations}
 The Sokoban AI can be improved further with some the following considerations:
 \begin{enumerate}
-    \item More deadlock detections: Thus far, we have accounted for Simple deadlocks (using pullback DFS strategy), and Freeze deadlocks (using the vertical/horizontal neighborhood search strategy). We can make the agent smarter by identifying more deadlock patterns. In particular, Corral deadlock algorithms would contribute to the game's efficiency.
+    \item \underline{More deadlock detections}: Thus far, we have accounted for Simple deadlocks (using pullback DFS strategy), and Freeze deadlocks (using the vertical/horizontal neighborhood search strategy). From the time of project draft to the final report, we made significant improvements in our freeze deadlocks and tinkered with some corral algorithm deadlocks as well.We can make the agent smarter by identifying more deadlock patterns. In particular, Corral deadlock algorithms would contribute to the game's efficiency.
     % \item Macro Moves: Currently our model uses movement in the cardinal directions as actions the agent can take. By defining the actions the agent can take to be macro moves (for example a move could be, move to the nearest box not on a storage location and move it in one of the four directions). This would reduce a lot of time spent in exploration as currently the agent spends a lot of time moving in the board without interacting with any boxes.
-    \item Heuristics: The agent moves according to an $\epsilon$-greedy policy so it either moves randomly or according to the policy learned so far. We can use heuristics such as distance to a box and expected number of moves to move a box to a goal to improve the performance of the agent, especially in the early game when most q values are still $0$. 
-    \item Deep Q-Learning: As our state (and action) space gets larger as the levels get more complicated, a tabular record of the states and actions can become more and more cumbersome and inefficient. In such scenarios, calling on to deep neural networks to help us generalize across states.
+    \item \underline{Heuristics}: The agent moves according to an $\epsilon$-greedy policy so it either moves randomly or according to the policy learned so far. We tried the possibility of using heuristics such as distance to a box and expected number of moves to move a box to a goal to improve the performance of the agent, especially in the early game when most q values are still $0$. Going forward, we would like to fix some of the bugs that are blocking the impact of heuristics on the game. 
+    \item \underline{Deep Q-Learning}: As our state (and action) space gets larger as the levels get more complicated, a tabular record of the states and actions can become more and more cumbersome and inefficient. We tried to implement Deep Neural Networks to help us generalize across states and find an approximate of the functions, but instead, redefining the state space rendered better results. We would certainly like to revisit the Deep Q-Learning space to see how it can render better results. 
     % \item Macro moves: Currently our implementations gives the agent four possible moves from every location on the board - Up, Down, Left, Right. We can reduce the time the agent spends exploring the board by grouping simple moves into macro moves - for example by defining one move to be move to the nearest box and push it one step. 
     % \item Heuristics: We can further inform our agents decisions by using heuristics to guide it's behaviour. For example, we could use distance to boxes that are not on storage locations, expected number of moves to move a box to a storage location to reduce the time the agent spends moving without interacting with any boxes. 
-    \item Identifying special cases: Although including a special instance can be very risky in case it fails on higher levels, if we can confidently deduce some universal scenarios and account for them then that might make our algorithm a lot smarter. Nonetheless, we have chosen to not include any such cases as of now so as to push most of our improvements through Q-Learning. 
-    \item Further redefine state space: We can consider including agent locations to the state space along with the box locations as well (state space = number of boxes + 1). Additionally, we can look into other state space representations as well (which aren't the whole board)   
+    \item \underline{Identifying special cases}: Although including a special instance can be very risky in case it fails on higher levels, if we can confidently deduce some universal scenarios and account for them then that might make our algorithm a lot smarter. Nonetheless, we have chosen to not include any such cases as of now so as to push most of our improvements through Q-Learning. 
+    \item \underline{Further redefine state space}: We can consider including agent locations to the state space along with the box locations as well (state space = number of boxes + 1). Additionally, we can look into other state space representations as well (which aren't the whole board)   
 \end{enumerate}
 
 %\section{Random - DELETE LATER}
