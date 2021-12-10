@@ -83,7 +83,7 @@ Sokoban is a challenging puzzle for both humans and AIs. Researchers have invest
 
 Sokoban is a part puzzle, part video game in which a player (Sokoban) pushes around boxes such that they end up in storage locations which are pre-determined by a game level. Sokoban runs into walls and other boxes along the way and whether or not it can navigate its way around such roadblocks is what forms the crux of this game. 
 
-We have developed an AI agent for Sokoban. Our project aims to develop a reasonably intelligent AI Sokoban that can handle multiple configurations of walls, boxes, and storages, all with varying complexities. We called on to the Q-Learning algorithm from within the larger umbrella of Reinforcement Learning and Markov Decision Processes to perform this taks (see \textbf{Q-Learning Algorithm}. Besides that, we invested in identifying some efficient approaches to identifying as many deadlock scenarios as possible, if not all (see \textbf{Freeze Deadlock Detection}). And finally, we constructed some macro moves the re-defined the state space to be limited to the box locations, thereby reducing our state space and branching factor exponentially (see \textbf{Macro Moves}). \underline{The space complexity of our algorithm is now exponential in the number of boxes} as against exponential in the board size. \underline{And the time complexity}, which is dependent on the branching factor, \underline{reduced because of the branching factor itself.} And finally, our \underline{q-values, even in their worst case, are now just exponential in the number of boxes.}
+We have developed an AI agent for Sokoban. Our project aims to develop a reasonably intelligent AI Sokoban that can handle multiple configurations of walls, boxes, and storage locations, all with varying complexities. We called on to the Q-Learning algorithm from within the larger umbrella of Reinforcement Learning and Markov Decision Processes to perform this task (see \textbf{Q-Learning Algorithm}. Besides that, we invested in identifying some efficient approaches to identifying as many deadlock scenarios as possible, if not all (see \textbf{Freeze Deadlock Detection}). And finally, we constructed some macro moves the re-defined the state space to be limited to the box locations, thereby reducing our state space and branching factor exponentially (see \textbf{Macro Moves}). \underline{The space complexity of our algorithm is now exponential in the number of boxes} as against exponential in the board size. \underline{And the time complexity}, which is dependent on the branching factor, \underline{reduced because of the branching factor itself.} And finally, our \underline{q-values, even in their worst case, are now just exponential in the number of boxes.}
 
 % \section{Reinforcement Learning and Q- Learning}
 % \textbf{What is Reinforcement Learning?}: \\
@@ -613,7 +613,7 @@ The below results for Sokoban that gets 5000 iterations to get to a solution. It
     \hline
     Sokoban-05a & 2 & Yes & 5s\\
     \hline
-    Sokoban-02 & Yes & 34s\\
+    Sokoban-02 & Yes & 506s\\
     \hline
 \end{tabular}
 \vspace{-5pt}
