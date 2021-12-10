@@ -39,8 +39,8 @@ def keyPressed(event, data):
     if event.keysym == "space":
         init(data)
 
-    if event.keysym in ["Up", "Down", "Left", "Right"]:
-        data.agent.movePlayer(data, data.state, actionDict(event.keysym))
+    #if event.keysym in ["Up", "Down", "Left", "Right"]:
+    #    data.agent.movePlayer(data, data.state, actionDict(event.keysym))
 
     # Check for game over condition after every action
     data.isGameOver = data.state.isGameOver(data)
@@ -52,38 +52,56 @@ def timerFired(data):
     if not data.isGameOver:
 
         # Move happens every second
-        
-        #if data.time % 1 == 0:
+        if data.time % 10 == 0:
 
-        # Get Action from epsilon greedy policy
-        action = data.agent.agentMove(data.board)
+            # Get Action from epsilon greedy policy
+            #action = data.agent.agentMove(data.state)
+            action = data.agent.agentMoveMacro(data.state, data.board, data)
 
-        # Check for outcome 
-        update = data.state.checkBoard(data, action) 
+            if action == None: 
+                data.isGameOver = True
 
-        #print("ACTION: (%s, %s)" % (action[0], action[1]))
+            # Check for outcome 
+            update = data.state.checkBoard(data, action) 
 
-        #print("EXPECTED OUTCOME: %s" % (update))
+            #print("ACTION: (%s, %s)" % (action[0], action[1]))
+            #print(action, data.agent.history)
 
-        # Wait for 2 seconds
-        #time.sleep(5)
+            #print("EXPECTED OUTCOME: %s" % (update))
 
-        # Move Agent
-        data.agent.movePlayer(data, data.board, action)
+            # Wait for 2 seconds
+            #time.sleep(5)
 
-        # Update q values
-        data.agent.qValueUpdate(update)
+            # Update q values
+            data.agent.qValueUpdate(update, action, data.state)
 
-        if update == "win":
-            data.winCount += 1
-            print("WIN")
+            # Move Agent
+            data.agent.movePlayer(data, data.state, action)
 
-        # Check for game over condition 
-        data.isGameOver = data.state.isGameOver(update)
-        if data.isGameOver: print(update)
+            if update == "win":
+                data.winCount += 1
+                print("WIN")
+
+            # Check for game over condition 
+            data.isGameOver = data.state.isGameOver(update)
+
+            winFlag = True
+            for box in data.state.boxes:
+                if box not in data.state.storage:
+                    winFlag = False
+            if winFlag: data.isGameOver 
+
+            if data.isGameOver: 
+                print(update)
     else:
         finalTime = time.perf_counter() - data.initialTime
-        print("Execution Time: %s seconds" % (finalTime))
+        #print("Execution Time: %s seconds" % (finalTime))
+
+        # List of moves til end of time
+        moves = []
+        for (state, path, action) in data.agent.history:
+            moves.append(path)
+            
         data.root.destroy()
 
 ####################################

@@ -20,11 +20,13 @@ def gameLoop(state, agent, count):
         data.time += 1
 
         # Get Action from epsilon greedy policy
-        action = data.agent.agentMove(data.board)
+        action = data.agent.agentMoveMacro(data.state, data.board, data)
+
+        if action == None: 
+            data.isGameOver = True
 
         # Check for outcome 
         update = data.state.checkBoard(data, action) 
-
         #print("ACTION: (%s, %s)" % (action[0], action[1]))
 
         #print("EXPECTED OUTCOME: %s" % (update))
@@ -32,22 +34,31 @@ def gameLoop(state, agent, count):
         # Wait for 2 seconds
         #time.sleep(5)
 
-        # Move Agent
-        data.agent.movePlayer(data, data.board, action)
-
         # Update q values
-        data.agent.qValueUpdate(update)
+        data.agent.qValueUpdate(update, action, data.state)
+
+        # Move Agent
+        data.agent.movePlayer(data, data.state, action)
 
         if update == "win":
             count += 1
 
         # Check for game over condition 
         data.isGameOver = data.state.isGameOver(update)
-        if data.isGameOver: print("Game ended due to: ", (update))
+
+        winFlag = True
+        for box in data.state.boxes:
+            if box not in data.state.storage:
+                winFlag = False
+        if winFlag: data.isGameOver 
+
+    # List of moves til end of time
+    moves = []
+    for (state, path, action) in data.agent.history:
+        moves.append(action)
 
     finalTime = time.perf_counter() - data.initialTime
-    print("Execution Time: %s seconds" % (finalTime))
+    #print("Execution Time: %s seconds" % (finalTime))
 
     return count
-
 
